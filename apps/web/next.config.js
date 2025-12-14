@@ -43,6 +43,11 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: "/",
+        destination: "/en",
+        permanent: false, // Use temporary redirect to allow locale detection
+      },
+      {
         source: "/support",
         destination: "https://support.rallly.co",
         permanent: true,
