@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LinkWithRedirectTo } from "../../components/link-with-redirect-to";
 
 export function DemoCredentials() {
   return (
@@ -24,9 +24,9 @@ export function DemoCredentials() {
       </div>
       <p className="text-xs text-blue-700 mb-2">
         Use these credentials to log in. If this is your first time,{" "}
-        <Link href="/register" className="underline font-medium">
+        <LinkWithRedirectTo href="/register" className="underline font-medium">
           register here
-        </Link>{" "}
+        </LinkWithRedirectTo>{" "}
         with these credentials (email verification is skipped in demo mode).
       </p>
     </div>

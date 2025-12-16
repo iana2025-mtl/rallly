@@ -95,7 +95,7 @@ export default async function LoginPage(props: {
         </AuthPageDescription>
       </AuthPageHeader>
       <AuthPageContent>
-        {env.DEMO_MODE === "true" && <DemoCredentials />}
+        {env.DEMO_MODE === "true" ? <DemoCredentials /> : null}
         {isEmailLoginEnabled && <LoginWithEmailForm />}
         {isEmailLoginEnabled && hasAlternateLoginMethods ? <OrDivider /> : null}
         <div className="grid gap-3">
