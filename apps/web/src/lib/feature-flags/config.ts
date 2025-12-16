@@ -8,12 +8,13 @@ import { isStorageEnabled } from "@/lib/storage";
 
 const isEmailLoginEnabled = env.EMAIL_LOGIN_ENABLED === "true";
 const isRegistrationEnabled = env.REGISTRATION_ENABLED === "true";
+const isDemoMode = env.DEMO_MODE === "true";
 
 export const featureFlagConfig: FeatureFlagConfig = {
   storage: isStorageEnabled,
   billing: isBillingEnabled,
   feedback: isFeedbackEnabled,
-  emailLogin: isEmailLoginEnabled,
-  registration: isEmailLoginEnabled && isRegistrationEnabled,
+  emailLogin: isEmailLoginEnabled || isDemoMode,
+  registration: (isEmailLoginEnabled && isRegistrationEnabled) || isDemoMode,
   calendars: isCalendarsEnabled,
 };
