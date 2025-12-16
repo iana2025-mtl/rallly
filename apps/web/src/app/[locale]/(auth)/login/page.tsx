@@ -48,6 +48,7 @@ export default async function LoginPage(props: {
   }
   const { isRegistrationEnabled, t } = await loadData();
   const isEmailLoginEnabled = isFeatureEnabled("emailLogin");
+  const isDemoMode = env.DEMO_MODE === "true";
 
   const hasGoogleProvider = !!authLib.options.socialProviders.google;
   const hasMicrosoftProvider = !!authLib.options.socialProviders.microsoft;
@@ -95,7 +96,7 @@ export default async function LoginPage(props: {
         </AuthPageDescription>
       </AuthPageHeader>
       <AuthPageContent>
-        {env.DEMO_MODE === "true" ? <DemoCredentials /> : null}
+        {isDemoMode && <DemoCredentials />}
         {isEmailLoginEnabled && <LoginWithEmailForm />}
         {isEmailLoginEnabled && hasAlternateLoginMethods ? <OrDivider /> : null}
         <div className="grid gap-3">

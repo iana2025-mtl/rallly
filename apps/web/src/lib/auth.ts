@@ -78,7 +78,7 @@ export const authLib = betterAuth({
   },
   emailAndPassword: {
     enabled: env.EMAIL_LOGIN_ENABLED !== "false",
-    requireEmailVerification: env.DEMO_MODE === "true" ? false : true,
+    requireEmailVerification: env.DEMO_MODE === "true" ? false : undefined,
     sendResetPassword: async ({ user, url }) => {
       const locale =
         "locale" in user ? (user.locale as string) : await getLocale();
