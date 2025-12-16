@@ -1,0 +1,69 @@
+# COMPLETE ENVIRONMENT VARIABLES FOR VERCEL
+# Copy everything below the line and paste into Vercel Environment Variables
+# IMPORTANT: Replace the placeholder values marked with [REPLACE THIS]
+
+# ============================================
+# REQUIRED - MUST HAVE THESE
+# ============================================
+
+DATABASE_URL=postgres://postgres:postgres@localhost:5450/rallly
+DIRECT_DATABASE_URL=postgres://postgres:postgres@localhost:5450/rallly
+SECRET_PASSWORD=abcdef1234567890abcdef1234567890
+SUPPORT_EMAIL=support@rallly.co
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+AUTH_URL=http://localhost:3000
+
+# ============================================
+# BUILD CONFIGURATION
+# ============================================
+
+SKIP_ENV_VALIDATION=1
+NODE_ENV=production
+
+# ============================================
+# APPLICATION SETTINGS
+# ============================================
+
+NEXT_PUBLIC_SELF_HOSTED=false
+SENTRY_IGNORE_API_RESOLUTION_ERROR=1
+
+# ============================================
+# EMAIL CONFIGURATION (SMTP)
+# ============================================
+
+EMAIL_PROVIDER=smtp
+SMTP_HOST=0.0.0.0
+SMTP_PORT=1025
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PWD=
+
+# ============================================
+# OPTIONAL - ADD IF NEEDED
+# ============================================
+
+# ALLOWED_EMAILS=user@example.com
+# EMAIL_LOGIN_ENABLED=true
+# REGISTRATION_ENABLED=true
+# NOREPLY_EMAIL=noreply@yourdomain.com
+# NOREPLY_EMAIL_NAME=Rallly
+
+# ============================================
+# INSTRUCTIONS:
+# ============================================
+# 1. Copy all variables above
+# 2. In Vercel, go to: Settings → Environment Variables
+# 3. For each variable, click "Add New" and paste:
+#    - Key: (variable name, e.g., DATABASE_URL)
+#    - Value: (the value after the = sign)
+# 4. REPLACE THESE VALUES:
+#    - DATABASE_URL: Your production PostgreSQL URL (NOT localhost!)
+#    - DIRECT_DATABASE_URL: Same as DATABASE_URL
+#    - NEXT_PUBLIC_BASE_URL: Your Vercel app URL (e.g., https://your-app.vercel.app)
+#    - AUTH_URL: Same as NEXT_PUBLIC_BASE_URL
+#    - SMTP_HOST: Your SMTP server (or leave as 0.0.0.0 for testing)
+#    - SMTP_PORT: Your SMTP port (587 for production, 1025 for testing)
+#    - SMTP_SECURE: true for production, false for testing
+#    - SMTP_USER: Your SMTP username (leave empty for testing)
+#    - SMTP_PWD: Your SMTP password (leave empty for testing)
+

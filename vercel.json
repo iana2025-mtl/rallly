@@ -1,7 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd ../.. && SKIP_ENV_VALIDATION=1 pnpm --filter @rallly/database db:generate && SKIP_ENV_VALIDATION=1 pnpm build:web",
-  "installCommand": "cd ../.. && pnpm install",
-  "outputDirectory": ".next"
-}
-
