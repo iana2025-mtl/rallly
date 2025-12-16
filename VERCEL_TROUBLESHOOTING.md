@@ -122,3 +122,5 @@ postgres://postgres:YOUR-ACTUAL-PASSWORD@db.bcbaplqjuxtowhdzqjzc.supabase.co:543
 3. **Try** changing `postgresql://` to `postgres://`
 4. **Redeploy** after making changes
 
+
+

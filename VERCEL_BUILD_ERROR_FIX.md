@@ -133,3 +133,5 @@ If build still fails after adding all variables:
 
 **The build should succeed once all 4 required variables are properly set!** 🚀
 
+
+

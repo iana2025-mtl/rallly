@@ -56,3 +56,5 @@ postgres://default:password@host.vercel-storage.com:5432/verceldb
 **Free Alternative:** Supabase (supabase.com → New Project)  
 **Then:** Copy connection string → Add as `DATABASE_URL` in Vercel
 
+
+

@@ -131,3 +131,5 @@ Or, the app should auto-redirect, but if it doesn't, manually add `/en`.
 
 **That's it!** Just add `/en` and it will work! 🎉
 
+
+
