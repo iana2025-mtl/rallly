@@ -25,9 +25,9 @@ export const fromDBRole = (role: PrismaSpaceMemberRole): MemberRole => {
 };
 
 /**
- * Default seat limit for spaces without active subscriptions
+ * Default seat limit for spaces without active subscriptions (Hobby plan)
  */
-const DEFAULT_SEAT_LIMIT = 1;
+export const DEFAULT_SEAT_LIMIT = 6;
 const MAX_SEAT_LIMIT = 100;
 
 /**

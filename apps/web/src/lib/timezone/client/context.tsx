@@ -2,10 +2,12 @@
 
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
 import * as React from "react";
 
 import { getBrowserTimeZone } from "@/utils/date-time-utils";
 
+dayjs.extend(utc);
 dayjs.extend(timezone);
 
 interface TimezoneContextProps {
@@ -27,10 +29,13 @@ export const TimezoneProvider = ({
   const [timezone, setTimezone] = React.useState(() => {
     if (initialTimezone) {
       try {
-        dayjs().tz(initialTimezone);
-        return initialTimezone;
+        // Validate timezone by trying to use it
+        const testDate = dayjs().tz(initialTimezone);
+        if (testDate.isValid()) {
+          return initialTimezone;
+        }
       } catch (error) {
-        console.warn(error);
+        console.warn("Invalid timezone:", initialTimezone, error);
       }
     }
 

@@ -21,6 +21,7 @@ import { SpaceSidebarMenu } from "@/app/[locale]/(space)/(dashboard)/components/
 import { UpgradeMenuItem } from "@/app/[locale]/(space)/(dashboard)/components/upgrade-menu-item";
 import { requireSpace, requireUser } from "@/auth/data";
 import { Trans } from "@/components/trans";
+import { GroupMeetingsLogo } from "@/components/group-meetings-logo";
 import { LicenseLimitWarning } from "@/features/licensing/components/license-limit-warning";
 import { CommandMenu } from "@/features/navigation/command-menu";
 import { SpaceDropdown } from "@/features/space/components/space-dropdown";
@@ -43,8 +44,13 @@ export default async function Layout({
     <SpaceSidebarProvider>
       <CommandMenu />
       <Sidebar>
-        <SidebarHeader>
-          <SpaceDropdown spaces={spaces} initialSpaceId={activeSpace.id} />
+        <SidebarHeader className="flex flex-col items-center gap-4 p-4 border-b border-[#c7dbda]/30 bg-gradient-to-b from-[#c7dbda]/10 to-transparent">
+          <div className="flex items-center justify-center">
+            <GroupMeetingsLogo size="sm" />
+          </div>
+          <div className="w-full">
+            <SpaceDropdown spaces={spaces} initialSpaceId={activeSpace.id} />
+          </div>
         </SidebarHeader>
         <SidebarContent>
           <SpaceSidebarMenu />

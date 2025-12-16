@@ -97,13 +97,15 @@ export const createSpaceAction = authActionClient
       ownerId: ctx.user.id,
     });
 
+    const totalSeats = await getTotalSeatsForSpace(space.id);
+    
     ctx.posthog?.groupIdentify({
       groupType: "space",
       groupKey: space.id,
       properties: {
         name: space.name,
         memberCount: 1,
-        seatCount: 1,
+        seatCount: totalSeats,
         tier: "hobby",
       },
     });

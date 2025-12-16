@@ -5,7 +5,7 @@ import { Command as CommandPrimitive } from "cmdk";
 import { SearchIcon } from "lucide-react";
 import * as React from "react";
 
-import { Dialog, DialogContent } from "./dialog";
+import { Dialog, DialogContent, DialogTitle } from "./dialog";
 import { usePlatform } from "./hooks/use-platform";
 import { Icon } from "./icon";
 import { cn } from "./lib/utils";
@@ -36,6 +36,7 @@ const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
         position="top"
         className="p-0"
       >
+        <DialogTitle className="sr-only">Command Menu</DialogTitle>
         <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:size-4 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:p-2 [&_[cmdk-item]_svg]:size-4">
           {children}
         </Command>

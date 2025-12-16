@@ -18,6 +18,7 @@ import {
 } from "@/app/components/page-layout";
 import { requireSpace, requireUser } from "@/auth/data";
 import { Trans } from "@/components/trans";
+import { GroupMeetingsLogo } from "@/components/group-meetings-logo";
 import { IfCloudHosted } from "@/contexts/environment";
 import { getUpcomingEventsCount } from "@/features/scheduled-event/data";
 import { loadMembers } from "@/features/space/data";
@@ -79,11 +80,14 @@ export default async function Page() {
   const isEmailLoginEnabled = isFeatureEnabled("emailLogin");
 
   return (
-    <PageContainer>
-      <PageHeader>
-        <PageTitle>
-          <Trans i18nKey="home" defaults="Home" />
-        </PageTitle>
+    <PageContainer className="bg-gradient-to-br from-[#ffe5e9]/20 via-white to-[#fdd7c2]/20 min-h-screen">
+      <PageHeader className="mb-6">
+        <div className="flex items-center gap-4">
+          <GroupMeetingsLogo size="md" />
+          <PageTitle className="text-[#1e3a5f]">
+            <Trans i18nKey="home" defaults="Home" />
+          </PageTitle>
+        </div>
       </PageHeader>
       <PageContent className="space-y-8">
         <div className="space-y-4">
@@ -93,14 +97,17 @@ export default async function Page() {
           </IfCloudHosted>
         </div>
         <div className="space-y-4">
-          <h2 className="text-muted-foreground text-sm">
+          <h2 className="text-[#1e3a5f] font-semibold text-base">
             <Trans i18nKey="homeActionsTitle" defaults="Actions" />
           </h2>
           <TileGrid>
-            <Tile asChild>
+            <Tile 
+              asChild
+              className="hover:bg-gradient-to-br hover:from-[#c7dbda]/30 hover:to-[#ffe5e9]/30 transition-all border-[#c7dbda]/50"
+            >
               <Link href="/new">
                 <CreatePageIcon />
-                <TileTitle>
+                <TileTitle className="text-[#1e3a5f]">
                   <Trans i18nKey="create" defaults="Create" />
                 </TileTitle>
               </Link>
@@ -108,17 +115,20 @@ export default async function Page() {
           </TileGrid>
         </div>
         <div className="space-y-4">
-          <h2 className="text-muted-foreground text-sm">
+          <h2 className="text-[#1e3a5f] font-semibold text-base">
             <Trans i18nKey="content" defaults="Content" />
           </h2>
           <TileGrid>
-            <Tile asChild>
+            <Tile 
+              asChild
+              className="hover:bg-gradient-to-br hover:from-[#c7dbda]/30 hover:to-[#ffe5e9]/30 transition-all border-[#c7dbda]/50"
+            >
               <Link href="/polls">
                 <PollPageIcon />
-                <TileTitle>
+                <TileTitle className="text-[#1e3a5f]">
                   <Trans i18nKey="polls" defaults="Polls" />
                 </TileTitle>
-                <TileDescription>
+                <TileDescription className="text-[#1e3a5f]/70">
                   <Trans
                     i18nKey="livePollCount"
                     defaults="{count} live"
@@ -128,13 +138,16 @@ export default async function Page() {
               </Link>
             </Tile>
 
-            <Tile asChild>
+            <Tile 
+              asChild
+              className="hover:bg-gradient-to-br hover:from-[#ffe5e9]/30 hover:to-[#fdd7c2]/30 transition-all border-[#ffe5e9]/50"
+            >
               <Link href="/events">
                 <EventPageIcon />
-                <TileTitle>
+                <TileTitle className="text-[#1e3a5f]">
                   <Trans i18nKey="events" defaults="Events" />
                 </TileTitle>
-                <TileDescription>
+                <TileDescription className="text-[#1e3a5f]/70">
                   <Trans
                     i18nKey="upcomingEventCount"
                     defaults="{count} upcoming"
@@ -146,26 +159,32 @@ export default async function Page() {
           </TileGrid>
         </div>
         <div className="space-y-4">
-          <h2 className="text-muted-foreground text-sm">
+          <h2 className="text-[#1e3a5f] font-semibold text-base">
             <Trans i18nKey="manage" defaults="Manage" />
           </h2>
           <TileGrid>
-            <Tile asChild>
+            <Tile 
+              asChild
+              className="hover:bg-gradient-to-br hover:from-[#c7dbda]/30 hover:to-[#ffe5e9]/30 transition-all border-[#c7dbda]/50"
+            >
               <Link href="/settings/general">
                 <SettingsPageIcon />
-                <TileTitle>
+                <TileTitle className="text-[#1e3a5f]">
                   <Trans i18nKey="settings" defaults="Settings" />
                 </TileTitle>
               </Link>
             </Tile>
 
-            <Tile asChild>
+            <Tile 
+              asChild
+              className="hover:bg-gradient-to-br hover:from-[#ffe5e9]/30 hover:to-[#fdd7c2]/30 transition-all border-[#ffe5e9]/50"
+            >
               <Link href="/settings/members">
                 <MembersPageIcon />
-                <TileTitle>
+                <TileTitle className="text-[#1e3a5f]">
                   <Trans i18nKey="members" defaults="Members" />
                 </TileTitle>
-                <TileDescription>
+                <TileDescription className="text-[#1e3a5f]/70">
                   <Trans
                     i18nKey="memberCount"
                     defaults="{count, plural, =0 {No members} one {1 member} other {# members}}"
@@ -177,13 +196,16 @@ export default async function Page() {
 
             <IfFeatureEnabled feature="billing">
               {canManageBilling && (
-                <Tile asChild>
+                <Tile 
+                  asChild
+                  className="hover:bg-gradient-to-br hover:from-[#fdd7c2]/30 hover:to-[#c7dbda]/30 transition-all border-[#fdd7c2]/50"
+                >
                   <Link href="/settings/billing">
                     <BillingPageIcon />
-                    <TileTitle>
+                    <TileTitle className="text-[#1e3a5f]">
                       <Trans i18nKey="billing" defaults="Billing" />
                     </TileTitle>
-                    <TileDescription>
+                    <TileDescription className="text-[#1e3a5f]/70">
                       <Trans
                         i18nKey="seatCount"
                         defaults="{count, plural, =0 {No seats} one {1 seat} other {# seats}}"
