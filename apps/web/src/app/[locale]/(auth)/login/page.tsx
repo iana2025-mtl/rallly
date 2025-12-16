@@ -17,6 +17,7 @@ import {
 } from "../components/auth-page";
 import { LinkWithRedirectTo } from "../components/link-with-redirect-to";
 import { AuthErrors } from "./components/auth-errors";
+import { DemoCredentials } from "./components/demo-credentials";
 import { LoginWithEmailForm } from "./components/login-email-form";
 import { LoginWithOIDC } from "./components/login-with-oidc";
 import { OrDivider } from "./components/or-divider";
@@ -94,6 +95,7 @@ export default async function LoginPage(props: {
         </AuthPageDescription>
       </AuthPageHeader>
       <AuthPageContent>
+        {env.DEMO_MODE === "true" && <DemoCredentials />}
         {isEmailLoginEnabled && <LoginWithEmailForm />}
         {isEmailLoginEnabled && hasAlternateLoginMethods ? <OrDivider /> : null}
         <div className="grid gap-3">

@@ -60,6 +60,10 @@ export const env = createEnv({
     EMAIL_LOGIN_ENABLED: z.enum(["true", "false"]).default("true"),
     REGISTRATION_ENABLED: z.enum(["true", "false"]).default("true"),
     /**
+     * Demo mode - disables email verification for easy testing
+     */
+    DEMO_MODE: z.enum(["true", "false"]).optional(),
+    /**
      * Email addresses for support and no-reply emails.
      */
     SUPPORT_EMAIL: z.email(),
@@ -144,6 +148,7 @@ export const env = createEnv({
     ALLOWED_EMAILS: process.env.ALLOWED_EMAILS,
     EMAIL_LOGIN_ENABLED: process.env.EMAIL_LOGIN_ENABLED,
     REGISTRATION_ENABLED: process.env.REGISTRATION_ENABLED,
+    DEMO_MODE: process.env.DEMO_MODE,
     AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
     AWS_REGION: process.env.AWS_REGION,
