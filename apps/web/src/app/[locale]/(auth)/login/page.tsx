@@ -4,7 +4,7 @@ import { Trans } from "react-i18next/TransWithoutContext";
 import { OIDCAutoSignIn } from "@/app/[locale]/(auth)/login/components/oidc-auto-sign-in";
 import { env } from "@/env";
 import { getTranslation } from "@/i18n/server";
-import { authLib, getSession } from "@/lib/auth";
+import { getAuthProviders, getSession } from "@/lib/auth";
 import { isFeatureEnabled } from "@/lib/feature-flags/server";
 import { getRegistrationEnabled } from "@/utils/get-registration-enabled";
 import {
@@ -50,11 +50,7 @@ export default async function LoginPage(props: {
   const isEmailLoginEnabled = isFeatureEnabled("emailLogin");
   const isDemoMode = env.DEMO_MODE === "true";
 
-  const hasGoogleProvider = !!authLib.options.socialProviders.google;
-  const hasMicrosoftProvider = !!authLib.options.socialProviders.microsoft;
-  const hasOidc = !!authLib.options.plugins.find(
-    (plugin) => plugin.id === "generic-oauth",
-  );
+  const { hasGoogle: hasGoogleProvider, hasMicrosoft: hasMicrosoftProvider, hasOidc } = getAuthProviders();
 
   const hasSocialLogin = hasGoogleProvider || hasMicrosoftProvider;
 

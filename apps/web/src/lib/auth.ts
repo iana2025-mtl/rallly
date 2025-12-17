@@ -349,6 +349,26 @@ export const authLib = betterAuth({
 
 export type Auth = typeof authLib;
 
+// Helper function to safely get auth provider info
+export function getAuthProviders() {
+  try {
+    return {
+      hasGoogle: !!authLib.options.socialProviders.google,
+      hasMicrosoft: !!authLib.options.socialProviders.microsoft,
+      hasOidc: !!authLib.options.plugins.find(
+        (plugin) => plugin.id === "generic-oauth",
+      ),
+    };
+  } catch (error) {
+    console.error("Failed to get auth providers", error);
+    return {
+      hasGoogle: false,
+      hasMicrosoft: false,
+      hasOidc: false,
+    };
+  }
+}
+
 export const getSession = cache(async () => {
   try {
     const session = await authLib.api.getSession({
