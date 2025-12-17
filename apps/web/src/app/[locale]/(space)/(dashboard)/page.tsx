@@ -28,6 +28,10 @@ import { getUserHasNoAccounts } from "@/features/user/queries";
 import { getTranslation } from "@/i18n/server";
 import { IfFeatureEnabled } from "@/lib/feature-flags/client";
 import { isFeatureEnabled } from "@/lib/feature-flags/server";
+import { getCurrentUser } from "@/auth/data";
+import { Button } from "@rallly/ui/button";
+import Link from "next/link";
+import { PageHeaderActions } from "@/app/components/page-layout";
 import { FeedbackAlert } from "./feedback-alert";
 import { PasswordSetupAlert } from "./password-setup-alert";
 
@@ -110,6 +114,7 @@ export default async function Page() {
   } = await loadData();
 
   const isEmailLoginEnabled = isFeatureEnabled("emailLogin");
+  const user = await getCurrentUser();
 
   return (
     <PageContainer className="bg-gradient-to-br from-[#ffe5e9]/20 via-white to-[#fdd7c2]/20 min-h-screen">
@@ -120,6 +125,15 @@ export default async function Page() {
             <Trans i18nKey="home" defaults="Home" />
           </PageTitle>
         </div>
+        {!user && isEmailLoginEnabled && (
+          <PageHeaderActions>
+            <Button variant="primary" asChild>
+              <Link href="/login">
+                <Trans i18nKey="login" defaults="Login" />
+              </Link>
+            </Button>
+          </PageHeaderActions>
+        )}
       </PageHeader>
       <PageContent className="space-y-8">
         <div className="space-y-4">
