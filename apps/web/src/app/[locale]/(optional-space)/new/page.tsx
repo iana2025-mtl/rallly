@@ -48,22 +48,13 @@ export default async function Page() {
               />
             ) : (
               <div className="flex items-center gap-x-2">
-                <Button variant="ghost" asChild>
+                <Button variant="primary" asChild>
                   <Link
-                    href={`/login?redirectTo=${encodeURIComponent("/new")}`}
+                    href={`/?redirectTo=${encodeURIComponent("/new")}`}
                   >
                     <Trans i18nKey="login" defaults="Login" />
                   </Link>
                 </Button>
-                {isRegistrationEnabled ? (
-                  <Button variant="primary" asChild>
-                    <Link
-                      href={`/register?redirectTo=${encodeURIComponent("/new")}`}
-                    >
-                      <Trans i18nKey="signUp" defaults="Sign up" />
-                    </Link>
-                  </Button>
-                ) : null}
               </div>
             )}
           </div>

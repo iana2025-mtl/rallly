@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { Trans } from "react-i18next/TransWithoutContext";
 
 import { getTranslation } from "@/i18n/server";
+import { env } from "@/env";
 
 import {
   AuthPageContainer,
@@ -17,6 +18,11 @@ import {
 import { OTPForm } from "./components/otp-form";
 
 export default async function VerifyPage() {
+  // Public demo mode: redirect to login if email verification is disabled
+  if (env.DEMO_MODE === "true") {
+    return redirect("/login");
+  }
+  
   const { t } = await getTranslation();
   const email = (await cookies()).get("verification-email")?.value;
   if (!email) {

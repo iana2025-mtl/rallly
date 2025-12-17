@@ -370,6 +370,12 @@ export function getAuthProviders() {
 }
 
 export const getSession = cache(async () => {
+  // Public demo mode: Check if authLib is available
+  if (!authLib || !authLib.api) {
+    console.warn("authLib not available (expected in demo mode)");
+    return null;
+  }
+
   try {
     const session = await authLib.api.getSession({
       headers: await headers(),
@@ -389,7 +395,8 @@ export const getSession = cache(async () => {
       };
     }
   } catch (e) {
-    console.error("FAILED TO GET SESSION", e);
+    // Public demo mode: Return null instead of crashing
+    console.warn("getSession failed (expected in demo mode):", e);
     return null;
   }
 

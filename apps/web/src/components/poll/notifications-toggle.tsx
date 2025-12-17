@@ -73,7 +73,7 @@ const NotificationsToggle: React.FunctionComponent = () => {
           variant="ghost"
           onClick={async () => {
             if (!user || user.isGuest) {
-              router.push(`/login?redirectTo=${encodeURIComponent(pathname)}`);
+              router.push(`/?redirectTo=${encodeURIComponent(pathname)}`);
               return;
             }
             // toggle

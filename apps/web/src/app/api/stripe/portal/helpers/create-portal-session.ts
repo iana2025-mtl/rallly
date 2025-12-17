@@ -36,9 +36,8 @@ export function createStripePortalSessionHandler(path = "") {
     } else {
       const userSession = await getSession();
       if (!userSession?.user || userSession.user.email === null) {
-        const url = new URL("/login", request.url);
-        url.searchParams.set("redirectTo", request.nextUrl.pathname);
-        return NextResponse.redirect(url, 302);
+        // Public demo mode: redirect to home instead of deleted /login
+        return NextResponse.redirect(new URL("/", request.url), 302);
       }
       try {
         const user = await prisma.user.findUnique({

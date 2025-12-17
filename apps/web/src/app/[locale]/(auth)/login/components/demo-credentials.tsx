@@ -1,7 +1,5 @@
 "use client";
 
-import { LinkWithRedirectTo } from "../../components/link-with-redirect-to";
-
 export function DemoCredentials() {
   return (
     <div className="rounded-lg border-2 border-blue-300 bg-blue-50 p-4 mb-6">
@@ -18,16 +16,12 @@ export function DemoCredentials() {
         <div className="flex items-center gap-2">
           <span className="font-medium text-blue-800">Password:</span>
           <code className="bg-blue-100 px-2 py-1 rounded text-blue-900 font-mono">
-            demo123
+            demo123456
           </code>
         </div>
       </div>
-      <p className="text-xs text-blue-700 mb-2">
-        Use these credentials to log in. If this is your first time,{" "}
-        <LinkWithRedirectTo href="/register" className="underline font-medium">
-          register here
-        </LinkWithRedirectTo>{" "}
-        with these credentials (email verification is skipped in demo mode).
+      <p className="text-xs text-blue-700">
+        Use these credentials to log in. Registration is disabled in demo mode.
       </p>
     </div>
   );

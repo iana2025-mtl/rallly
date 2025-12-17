@@ -12,8 +12,8 @@ const { auth, handlers, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [GuestProvider],
   pages: {
-    signIn: "/login",
-    verifyRequest: "/login/verify",
+    signIn: "/",  // Public demo mode: redirect to home instead of deleted /login
+    verifyRequest: "/",  // Public demo mode: redirect to home instead of deleted /login/verify
     error: "/auth/error",
   },
   jwt: {

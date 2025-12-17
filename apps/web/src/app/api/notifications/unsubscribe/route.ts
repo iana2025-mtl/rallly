@@ -11,19 +11,22 @@ export const GET = async (req: NextRequest) => {
   const token = req.nextUrl.searchParams.get("token");
 
   if (!token) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    // Public demo mode: redirect to home instead of deleted /login
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
   const session = await getSession();
 
   if (!session || !session.user?.email) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    // Public demo mode: redirect to home instead of deleted /login
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
   const payload = await decryptToken<DisableNotificationsPayload>(token);
 
   if (!payload) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    // Public demo mode: redirect to home instead of deleted /login
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
   const watcher = await prisma.watcher.findFirst({

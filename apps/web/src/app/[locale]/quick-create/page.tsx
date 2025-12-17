@@ -29,7 +29,7 @@ export default async function QuickCreatePage() {
         </div>
         <div className="flex justify-center gap-4">
           <Button className="rounded-full" asChild>
-            <Link href="/login" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <Icon>
                 <LogInIcon />
               </Icon>

@@ -46,37 +46,57 @@ async function loadData() {
     };
   }
 
-  const [
-    livePollCount,
-    upcomingEventCount,
-    { total: memberCount },
-    seatCount,
-    hasNoAccounts,
-  ] = await Promise.all([
-    prisma.poll.count({
-      where: {
-        spaceId: space.id,
-        status: "live",
-        deleted: false,
-      },
-    }),
-    getUpcomingEventsCount(),
-    loadMembers(),
-    getTotalSeatsForSpace(space.id),
-    getUserHasNoAccounts(user.id),
-  ]);
+  // Public demo mode: These functions call requireSpace() internally, 
+  // which will return null. Handle errors gracefully.
+  let upcomingEventCount = 0;
+  let memberCount = 0;
+  let seatCount = 0;
+  let hasNoAccounts = false;
 
-  const ability = defineAbilityForMember({ space, user });
-  const canManageBilling = ability.can("manage", "Billing");
+  try {
+    const [livePollCountResult, upcomingEventsResult, membersResult, seatCountResult, hasNoAccountsResult] = await Promise.all([
+      prisma.poll.count({
+        where: {
+          spaceId: space.id,
+          status: "live",
+          deleted: false,
+        },
+      }),
+      getUpcomingEventsCount().catch(() => 0),
+      loadMembers().catch(() => ({ total: 0, data: [] })),
+      getTotalSeatsForSpace(space.id).catch(() => 0),
+      getUserHasNoAccounts(user.id).catch(() => false),
+    ]);
 
-  return {
-    livePollCount,
-    upcomingEventCount,
-    memberCount,
-    seatCount,
-    canManageBilling,
-    hasNoAccounts,
-  };
+    upcomingEventCount = upcomingEventsResult;
+    memberCount = membersResult.total;
+    seatCount = seatCountResult;
+    hasNoAccounts = hasNoAccountsResult;
+
+    const ability = defineAbilityForMember({ space, user });
+    const canManageBilling = ability.can("manage", "Billing");
+
+    return {
+      livePollCount: livePollCountResult,
+      upcomingEventCount,
+      memberCount,
+      seatCount,
+      canManageBilling,
+      hasNoAccounts,
+    };
+  } catch (error) {
+    // Public demo mode: If any function fails (e.g., requireSpace returns null),
+    // return empty data gracefully
+    console.warn("loadData failed (expected in demo mode):", error);
+    return {
+      livePollCount: 0,
+      upcomingEventCount: 0,
+      memberCount: 0,
+      seatCount: 0,
+      canManageBilling: false,
+      hasNoAccounts: false,
+    };
+  }
 }
 
 export default async function Page() {

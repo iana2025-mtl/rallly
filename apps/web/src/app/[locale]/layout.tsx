@@ -33,12 +33,21 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-// Public demo mode: No auth initialization
+// Public demo mode: Still check for user session if logged in
 async function loadData() {
-  // Return null user - no auth session or user data
-  return {
-    user: null,
-  };
+  try {
+    const { getCurrentUser } = await import("@/auth/data");
+    const user = await getCurrentUser();
+    return {
+      user,
+    };
+  } catch (error) {
+    // In demo mode, allow access without user
+    console.warn("Failed to get user (expected in demo mode):", error);
+    return {
+      user: null,
+    };
+  }
 }
 
 export default async function Root({
@@ -64,7 +73,7 @@ export default async function Root({
               <LazyMotion features={domAnimation}>
                 <PostHogProvider>
                   <PostHogIdentify
-                    distinctId={undefined}
+                    distinctId={user?.id}
                   />
                   <PostHogPageView />
                   <TooltipProvider>
@@ -72,12 +81,12 @@ export default async function Root({
                       <LocaleSync userLocale={user?.locale ?? locale} />
                       <PreferencesProvider
                         initialValue={{
-                          timeFormat: user?.timeFormat,
-                          timeZone: user?.timeZone,
-                          weekStart: user?.weekStart,
+                          timeFormat: user?.timeFormat ?? undefined,
+                          timeZone: user?.timeZone ?? undefined,
+                          weekStart: user?.weekStart ?? undefined,
                         }}
                       >
-                        <TimezoneProvider initialTimezone={user?.timeZone}>
+                        <TimezoneProvider initialTimezone={user?.timeZone ?? undefined}>
                           <ConnectedDayjsProvider>
                             {children}
                             <TimeZoneChangeDetector />

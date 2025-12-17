@@ -15,6 +15,7 @@ export const featureFlagConfig: FeatureFlagConfig = {
   billing: isBillingEnabled,
   feedback: isFeedbackEnabled,
   emailLogin: isEmailLoginEnabled || isDemoMode,
-  registration: (isEmailLoginEnabled && isRegistrationEnabled) || isDemoMode,
+  // In demo mode, disable registration - use demo credentials only
+  registration: isDemoMode ? false : (isEmailLoginEnabled && isRegistrationEnabled),
   calendars: isCalendarsEnabled,
 };

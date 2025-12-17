@@ -83,7 +83,9 @@ export function LoginWithEmailForm() {
                   break;
                 default:
                   form.setError("password", {
-                    message: res.error.message,
+                    message: res.error.message || t("passwordOrEmailIncorrect", {
+                      defaultValue: "Invalid email or password",
+                    }),
                   });
                   break;
               }
@@ -94,49 +96,28 @@ export function LoginWithEmailForm() {
 
             return;
           } else {
+            // Always check for password method first - in demo mode, users should have passwords
             if (!showPasswordField) {
               const res = await getLoginMethod({
                 email: identifier,
               });
 
               if (res.data?.method === "credential") {
-                // show password field
+                // show password field for password-based login
                 setShowPasswordField(true);
                 return;
               }
             }
 
-            const res = await authClient.emailOtp.sendVerificationOtp({
-              email: identifier,
-              type: "email-verification",
+            // If we reach here, user doesn't have a password method
+            // In demo mode, email verification is disabled, so skip OTP
+            // Show an error asking user to use password instead
+            form.setError("identifier", {
+              message: t("passwordOrEmailIncorrect", {
+                defaultValue: "Please use password to login",
+              }),
             });
-
-            if (res.error) {
-              switch (res.error.code) {
-                case "EMAIL_BLOCKED":
-                  form.setError("identifier", {
-                    message: t("authErrorsEmailBlocked"),
-                  });
-                  break;
-                default:
-                  form.setError("identifier", {
-                    message: res.error.message,
-                  });
-                  break;
-              }
-              return;
-            }
-
-            await setVerificationEmail(identifier);
-            // redirect to verify page with redirectTo
-
-            router.push(
-              `/login/verify${
-                validatedRedirectTo
-                  ? `?redirectTo=${encodeURIComponent(validatedRedirectTo)}`
-                  : ""
-              }`,
-            );
+            return;
           }
         })}
       >

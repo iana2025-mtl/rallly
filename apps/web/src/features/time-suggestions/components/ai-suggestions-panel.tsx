@@ -397,6 +397,44 @@ export function AISuggestionsPanel({
   // Always show the panel when time slots are enabled, even if data check is in progress or failed
   // This ensures users can see what's happening and get feedback
 
+  // In public demo mode (no authenticated user), show a message that login is required
+  if (!isUserReady) {
+    return (
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="secondary"
+            className="w-full justify-between border-t"
+            type="button"
+          >
+            <span className="flex items-center gap-2">
+              <SparklesIcon className="h-4 w-4 text-primary-500" />
+              <Trans i18nKey="aiSuggestions" defaults="AI Time Suggestions" />
+            </span>
+            {isOpen ? (
+              <ChevronUpIcon className="h-4 w-4" />
+            ) : (
+              <ChevronDownIcon className="h-4 w-4" />
+            )}
+          </Button>
+        </CollapsibleTrigger>
+        {isOpen && (
+          <CollapsibleContent className="mt-3">
+            <Alert>
+              <InfoIcon className="h-4 w-4" />
+              <AlertDescription>
+                <Trans
+                  i18nKey="aiSuggestionsRequiresAuth"
+                  defaults="AI time suggestions require you to be logged in. Please log in to use this feature."
+                />
+              </AlertDescription>
+            </Alert>
+          </CollapsibleContent>
+        )}
+      </Collapsible>
+    );
+  }
+
   // Show loading state while checking data availability
   if (checkingData) {
     return (

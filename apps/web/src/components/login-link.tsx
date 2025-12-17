@@ -12,7 +12,7 @@ export const LoginLink = React.forwardRef<
     <Link
       ref={ref}
       {...props}
-      href={`/login?redirectTo=${encodeURIComponent(pathname)}`}
+      href={`/?redirectTo=${encodeURIComponent(pathname)}`}
     >
       {children}
     </Link>

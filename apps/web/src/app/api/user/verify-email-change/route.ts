@@ -23,9 +23,8 @@ export const GET = async (request: NextRequest) => {
   const session = await getSession();
 
   if (!session?.user || session.user.isGuest) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirectTo", request.url);
-    return NextResponse.redirect(loginUrl);
+    // Public demo mode: redirect to home instead of deleted /login
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   const payload = await decryptToken<EmailChangePayload>(token);
