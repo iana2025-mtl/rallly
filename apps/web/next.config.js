@@ -21,11 +21,20 @@ const nextConfig = {
     "@rallly/emails",
   ],
   assetPrefix: process.env.NEXT_PUBLIC_BASE_URL,
-  webpack(config) {
+  webpack(config, { isServer }) {
     config.module.rules.push({
       test: /\.svg$/,
       use: ["@svgr/webpack"],
     });
+
+    // Ensure Prisma Client is bundled correctly for serverless functions
+    if (isServer) {
+      config.externals = config.externals || [];
+      // Don't externalize Prisma Client - it needs to be bundled
+      config.externals = config.externals.filter(
+        (external) => !(typeof external === "string" && external.includes("prisma")),
+      );
+    }
 
     return config;
   },
