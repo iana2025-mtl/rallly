@@ -251,51 +251,68 @@ export const authLib = betterAuth({
           if (user.isAnonymous) {
             return;
           }
-          // check if user exists in prisma
-          const existingUser = await prisma.user.findUnique({
-            where: {
-              id: user.id,
-            },
-          });
-
-          const posthog = PostHogClient();
-
-          if (existingUser) {
-            // create a space for the user
-            const space = await createSpace({
-              name: "Personal",
-              ownerId: user.id,
-            });
-
-            posthog?.groupIdentify({
-              groupType: "space",
-              groupKey: space.id,
-              properties: {
-                name: space.name,
-                memberCount: 1,
-                seatCount: 1,
-                tier: "hobby",
+          
+          try {
+            // check if user exists in prisma
+            const existingUser = await prisma.user.findUnique({
+              where: {
+                id: user.id,
               },
             });
-          }
 
-          posthog?.capture({
-            distinctId: user.id,
-            event: "register",
-            properties: {
-              method: user.lastLoginMethod,
-              $set: {
-                name: user.name,
-                email: user.email,
-                tier: "hobby",
-                timeZone: user.timeZone ?? undefined,
-                locale: user.locale ?? undefined,
-              },
-            },
-          });
+            const posthog = PostHogClient();
 
-          if (posthog) {
-            waitUntil(posthog.shutdown());
+            if (existingUser) {
+              try {
+                // create a space for the user
+                const space = await createSpace({
+                  name: "Personal",
+                  ownerId: user.id,
+                });
+
+                posthog?.groupIdentify({
+                  groupType: "space",
+                  groupKey: space.id,
+                  properties: {
+                    name: space.name,
+                    memberCount: 1,
+                    seatCount: 1,
+                    tier: "hobby",
+                  },
+                });
+              } catch (spaceError) {
+                // Log but don't fail registration if space creation fails
+                console.error("Failed to create space for user:", spaceError);
+              }
+            }
+
+            try {
+              posthog?.capture({
+                distinctId: user.id,
+                event: "register",
+                properties: {
+                  method: user.lastLoginMethod,
+                  $set: {
+                    name: user.name,
+                    email: user.email,
+                    tier: "hobby",
+                    timeZone: user.timeZone ?? undefined,
+                    locale: user.locale ?? undefined,
+                  },
+                },
+              });
+
+              if (posthog) {
+                waitUntil(posthog.shutdown());
+              }
+            } catch (posthogError) {
+              // Log but don't fail registration if PostHog fails
+              console.error("Failed to track registration event:", posthogError);
+            }
+          } catch (error) {
+            // Log error but don't fail user creation
+            console.error("Error in user.create.after hook:", error);
+            // Don't throw - allow user creation to succeed even if hook fails
           }
         },
       },

@@ -81,8 +81,11 @@ export function RegisterNameForm() {
                   });
                   break;
                 default:
+                  // Add fallback for undefined error messages
                   form.setError("email", {
-                    message: res.error.message,
+                    message: res.error.message || res.error.code || t("registrationError", {
+                      defaultValue: "An error occurred during registration. Please try again.",
+                    }),
                   });
                   break;
               }
