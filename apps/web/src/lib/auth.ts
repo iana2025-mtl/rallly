@@ -70,44 +70,58 @@ if (env.OIDC_CLIENT_ID && env.OIDC_CLIENT_SECRET && env.OIDC_DISCOVERY_URL) {
   );
 }
 
-export const authLib = betterAuth({
-  appName: "Rallly",
-  secret: env.SECRET_PASSWORD,
-  experimental: {
-    joins: true,
-  },
-  emailAndPassword: {
-    enabled: env.EMAIL_LOGIN_ENABLED !== "false",
-    requireEmailVerification: env.DEMO_MODE === "true" ? false : true,
-    sendResetPassword: async ({ user, url }) => {
-      const locale =
-        "locale" in user ? (user.locale as string) : await getLocale();
+// Lazy initialization: Better Auth is only created when first accessed
+let _authLib: ReturnType<typeof betterAuth> | null = null;
 
-      await getEmailClient(locale).sendTemplate("ResetPasswordEmail", {
-        to: user.email,
-        props: {
-          resetLink: url,
-        },
-      });
+export function getAuthLib() {
+  if (_authLib) {
+    return _authLib;
+  }
+  
+  // Ensure Prisma Client is initialized before creating better-auth
+  // This ensures the User model is available when prismaAdapter tries to access it
+  void prisma.$connect().catch(() => {
+    // Ignore connection errors - Prisma will connect on first query
+  });
+  
+  _authLib = betterAuth({
+    appName: "Rallly",
+    secret: env.SECRET_PASSWORD,
+    experimental: {
+      joins: true,
     },
-    onPasswordReset: async ({ user }) => {
-      const posthog = PostHogClient();
-      posthog?.capture({
-        distinctId: user.id,
-        event: "password_reset",
-      });
-      if (posthog) {
-        waitUntil(posthog.shutdown());
-      }
+    emailAndPassword: {
+      enabled: env.EMAIL_LOGIN_ENABLED !== "false",
+      requireEmailVerification: env.DEMO_MODE === "true" ? false : true,
+      sendResetPassword: async ({ user, url }) => {
+        const locale =
+          "locale" in user ? (user.locale as string) : await getLocale();
+
+        await getEmailClient(locale).sendTemplate("ResetPasswordEmail", {
+          to: user.email,
+          props: {
+            resetLink: url,
+          },
+        });
+      },
+      onPasswordReset: async ({ user }) => {
+        const posthog = PostHogClient();
+        posthog?.capture({
+          distinctId: user.id,
+          event: "password_reset",
+        });
+        if (posthog) {
+          waitUntil(posthog.shutdown());
+        }
+      },
     },
-  },
-  emailVerification: {
-    autoSignInAfterVerification: true,
-  },
-  database: prismaAdapter(prisma, {
-    provider: "postgresql",
-    transaction: false, // when set to true, there is an issue where the after() hook is called before the user is actually created in the database
-  }),
+    emailVerification: {
+      autoSignInAfterVerification: true,
+    },
+    database: prismaAdapter(prisma, {
+      provider: "postgresql",
+      transaction: false, // when set to true, there is an issue where the after() hook is called before the user is actually created in the database
+    }),
   plugins: [
     ...plugins,
     admin(),
@@ -404,18 +418,34 @@ export const authLib = betterAuth({
     expiresIn: 60 * 60 * 24 * 60, // 60 days
     updateAge: 60 * 60 * 24, // 1 day
   },
-  baseURL,
+    baseURL,
+  });
+  
+  return _authLib;
+}
+
+// Export lazy getter - Better Auth is only initialized when first accessed
+export const authLib = new Proxy({} as ReturnType<typeof betterAuth>, {
+  get(_target, prop) {
+    const lib = getAuthLib();
+    const value = lib[prop as keyof typeof lib];
+    if (typeof value === "function") {
+      return value.bind(lib);
+    }
+    return value;
+  },
 });
 
-export type Auth = typeof authLib;
+export type Auth = ReturnType<typeof getAuthLib>;
 
 // Helper function to safely get auth provider info
 export function getAuthProviders() {
   try {
+    const lib = getAuthLib();
     return {
-      hasGoogle: !!authLib.options.socialProviders.google,
-      hasMicrosoft: !!authLib.options.socialProviders.microsoft,
-      hasOidc: !!authLib.options.plugins.find(
+      hasGoogle: !!lib.options.socialProviders.google,
+      hasMicrosoft: !!lib.options.socialProviders.microsoft,
+      hasOidc: !!lib.options.plugins.find(
         (plugin) => plugin.id === "generic-oauth",
       ),
     };
@@ -431,13 +461,14 @@ export function getAuthProviders() {
 
 export const getSession = cache(async () => {
   // Public demo mode: Check if authLib is available
-  if (!authLib || !authLib.api) {
-    console.warn("authLib not available (expected in demo mode)");
-    return null;
-  }
-
   try {
-    const session = await authLib.api.getSession({
+    const lib = getAuthLib();
+    if (!lib || !lib.api) {
+      console.warn("authLib not available (expected in demo mode)");
+      return null;
+    }
+
+    const session = await lib.api.getSession({
       headers: await headers(),
     });
 
@@ -479,8 +510,9 @@ export const getSession = cache(async () => {
 });
 
 export const signOut = async () => {
+  const lib = getAuthLib();
   await Promise.all([
-    authLib.api.signOut({
+    lib.api.signOut({
       headers: await headers(),
     }),
     legacySignOut({
