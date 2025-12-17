@@ -220,25 +220,39 @@ export const authLib = betterAuth({
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      // Skip email validation in demo mode
+      if (env.DEMO_MODE === "true") {
+        return;
+      }
+
       if (
         ctx.path.startsWith("/sign-in") ||
         ctx.path.startsWith("/sign-up") ||
         ctx.path.startsWith("/email-otp")
       ) {
         if (ctx.body?.email) {
-          if (isEmailBlocked(ctx.body.email as string)) {
-            throw new APIError("BAD_REQUEST", {
-              code: "EMAIL_BLOCKED",
-              message:
-                "This email address is not allowed. Please use a different email or contact support.",
-            });
-          }
-          if (isTemporaryEmail(ctx.body.email as string)) {
-            throw new APIError("BAD_REQUEST", {
-              code: "TEMPORARY_EMAIL_NOT_ALLOWED",
-              message:
-                "Temporary email addresses are not allowed. Please use a different email.",
-            });
+          try {
+            if (isEmailBlocked(ctx.body.email as string)) {
+              throw new APIError("BAD_REQUEST", {
+                code: "EMAIL_BLOCKED",
+                message:
+                  "This email address is not allowed. Please use a different email or contact support.",
+              });
+            }
+            if (isTemporaryEmail(ctx.body.email as string)) {
+              throw new APIError("BAD_REQUEST", {
+                code: "TEMPORARY_EMAIL_NOT_ALLOWED",
+                message:
+                  "Temporary email addresses are not allowed. Please use a different email.",
+              });
+            }
+          } catch (error) {
+            // Re-throw APIError, but catch any unexpected errors
+            if (error instanceof APIError) {
+              throw error;
+            }
+            // Log unexpected errors but don't block registration
+            console.error("Error in email validation hook:", error);
           }
         }
       }
