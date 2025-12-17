@@ -253,23 +253,22 @@ export const authLib = betterAuth({
           }
           
           try {
-            // check if user exists in prisma
-            const existingUser = await prisma.user.findUnique({
+            // Check if user already has a space to avoid duplicates
+            const existingSpace = await prisma.space.findFirst({
               where: {
-                id: user.id,
+                ownerId: user.id,
               },
             });
 
-            const posthog = PostHogClient();
-
-            if (existingUser) {
+            // Only create space if user doesn't have one
+            if (!existingSpace) {
               try {
-                // create a space for the user
                 const space = await createSpace({
                   name: "Personal",
                   ownerId: user.id,
                 });
 
+                const posthog = PostHogClient();
                 posthog?.groupIdentify({
                   groupType: "space",
                   groupKey: space.id,
@@ -286,7 +285,9 @@ export const authLib = betterAuth({
               }
             }
 
+            // Track registration event
             try {
+              const posthog = PostHogClient();
               posthog?.capture({
                 distinctId: user.id,
                 event: "register",
@@ -311,8 +312,10 @@ export const authLib = betterAuth({
             }
           } catch (error) {
             // Log error but don't fail user creation
+            // This ensures registration succeeds even if the hook fails
             console.error("Error in user.create.after hook:", error);
-            // Don't throw - allow user creation to succeed even if hook fails
+            // Explicitly return to prevent any error from propagating
+            return;
           }
         },
       },
