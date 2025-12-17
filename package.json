@@ -3,6 +3,7 @@
   "private": true,
   "version": "4.5.11",
   "scripts": {
+    "postinstall": "pnpm --filter @rallly/database db:generate",
     "dev": "turbo dev --filter=@rallly/web",
     "dev:emails": "turbo dev --filter=@rallly/emails",
     "dev:landing": "dotenv -c development turbo dev --filter=@rallly/landing",
