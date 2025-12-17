@@ -5,18 +5,17 @@ import {
   passwordQualityThresholds,
 } from "@/features/password/utils";
 import { useTranslation } from "@/i18n/client";
-import { useFeatureFlags } from "@/lib/feature-flags/client";
+import { useFeatureFlag } from "@/lib/feature-flags/client";
 
 export function usePasswordValidationSchema() {
   const { t } = useTranslation();
-  const featureFlags = useFeatureFlags();
-  // In demo mode or when registration is enabled, relax password requirements
+  // Check if registration is enabled - if so, relax password requirements
   // This allows simple passwords for hobby/school projects
-  const shouldRelaxRequirements = featureFlags?.registration === true;
+  const isRegistrationEnabled = useFeatureFlag("registration");
   
-  // When relaxed, only require minimum length (8 chars) - no strength requirement
+  // When registration is enabled, only require minimum length (8 chars) - no strength requirement
   // For production, require "good" strength (score 3/4)
-  if (shouldRelaxRequirements) {
+  if (isRegistrationEnabled) {
     return z.string().min(8, t("passwordMinLength", {
       defaultValue: "Password must be at least 8 characters long.",
     }));
