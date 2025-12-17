@@ -78,11 +78,16 @@ export function getAuthLib() {
     return _authLib;
   }
   
-  // Ensure Prisma Client is initialized before creating better-auth
-  // This ensures the User model is available when prismaAdapter tries to access it
-  void prisma.$connect().catch(() => {
-    // Ignore connection errors - Prisma will connect on first query
-  });
+  // Ensure Prisma Client is initialized and User model is accessible
+  const prismaClient = prisma;
+  
+  // Explicitly verify the User model exists before passing to better-auth
+  // This ensures better-auth's Prisma adapter can find it
+  if (!prismaClient.user) {
+    throw new Error(
+      "Prisma Client User model is not available. Make sure Prisma Client is generated correctly."
+    );
+  }
   
   _authLib = betterAuth({
     appName: "Rallly",
@@ -118,7 +123,7 @@ export function getAuthLib() {
     emailVerification: {
       autoSignInAfterVerification: true,
     },
-    database: prismaAdapter(prisma, {
+    database: prismaAdapter(prismaClient, {
       provider: "postgresql",
       transaction: false, // when set to true, there is an issue where the after() hook is called before the user is actually created in the database
     }),

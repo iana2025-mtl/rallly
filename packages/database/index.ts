@@ -24,21 +24,12 @@ function getPrisma(): ExtendedPrismaClient {
   const client = prismaClientSingleton();
   
   // Cache in globalThis for reuse (especially important in serverless environments)
-  if (process.env.NODE_ENV !== "production") {
-    globalThis.prismaGlobal = client;
-  }
+  // Always cache in production for serverless functions to ensure singleton behavior
+  globalThis.prismaGlobal = client;
   
   return client;
 }
 
-// Export a getter that lazily initializes Prisma Client
-export const prisma = new Proxy({} as ExtendedPrismaClient, {
-  get(_target, prop) {
-    const client = getPrisma();
-    const value = client[prop as keyof ExtendedPrismaClient];
-    if (typeof value === "function") {
-      return value.bind(client);
-    }
-    return value;
-  },
-});
+// Export the actual Prisma Client instance (lazy via getPrisma)
+// This ensures better-auth can access prisma.user directly without Proxy issues
+export const prisma = getPrisma();
