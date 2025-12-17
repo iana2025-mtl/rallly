@@ -6,7 +6,697 @@ datasource db {
 
 generator client {
   provider        = "prisma-client-js"
-  output          = "../node_modules/.prisma/client"
   binaryTargets   = ["native"]
   previewFeatures = ["relationJoins"]
+}
+
+// ============================================================================
+// Enums
+// ============================================================================
+
+enum TimeFormat {
+  hours12
+  hours24
+
+  @@map("time_format")
+}
+
+enum UserRole {
+  admin
+  user
+
+  @@map("user_role")
+}
+
+enum SpaceMemberRole {
+  ADMIN
+  MEMBER
+}
+
+enum SpaceTier {
+  hobby
+  pro
+
+  @@map("space_tiers")
+}
+
+enum ParticipantVisibility {
+  full
+  scoresOnly
+  limited
+
+  @@map("participant_visibility")
+}
+
+enum PollStatus {
+  live
+  paused
+  finalized
+
+  @@map("poll_status")
+}
+
+enum VoteType {
+  yes
+  no
+  ifNeedBe
+
+  @@map("vote_type")
+}
+
+enum ScheduledEventStatus {
+  confirmed
+  canceled
+  unconfirmed
+
+  @@map("scheduled_event_status")
+}
+
+enum ScheduledEventInviteStatus {
+  pending
+  accepted
+  declined
+  tentative
+
+  @@map("scheduled_event_invite_status")
+}
+
+enum SubscriptionStatus {
+  incomplete
+  incomplete_expired
+  active
+  paused
+  trialing
+  past_due
+  canceled
+  unpaid
+
+  @@map("subscription_status")
+}
+
+enum SubscriptionInterval {
+  month
+  year
+
+  @@map("subscription_interval")
+}
+
+enum CredentialType {
+  OAUTH
+}
+
+enum LicenseType {
+  PLUS
+  ORGANIZATION
+  ENTERPRISE
+}
+
+enum LicenseStatus {
+  ACTIVE
+  REVOKED
+}
+
+// ============================================================================
+// User & Authentication Models
+// ============================================================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  scope             String?
+  id_token          String? @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  password              String?   @map("password")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model User {
+  id              String      @id @default(cuid())
+  name            String
+  email           String      @unique @db.Citext
+  emailVerified   Boolean?    @map("email_verified")
+  image           String?
+  timeZone        String?     @map("time_zone")
+  weekStart       Int?        @map("week_start")
+  timeFormat      TimeFormat? @map("time_format")
+  locale          String?
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime?   @updatedAt @map("updated_at")
+  customerId      String?     @map("customer_id")
+  banned          Boolean     @default(false)
+  bannedAt        DateTime?   @map("banned_at")
+  banReason       String?     @map("ban_reason")
+  banExpires      DateTime?   @map("ban_expires")
+  role            UserRole    @default(user)
+  lastLoginMethod String?     @map("last_login_method")
+  isAnonymous     Boolean     @default(false) @map("anonymous")
+
+  comments           Comment[]
+  polls              Poll[]
+  watcher            Watcher[]
+  accounts           Account[]
+  participants       Participant[]
+  paymentMethods     PaymentMethod[]
+  spaceMemberInvites SpaceMemberInvite[]
+
+  subscriptions Subscription[] @relation("UserToSubscription")
+  spaces        Space[]        @relation("UserSpaces")
+  memberOf      SpaceMember[]
+
+  pollViews             PollView[]
+  scheduledEvents       ScheduledEvent[]
+  scheduledEventInvites ScheduledEventInvite[]
+
+  calendarConnections CalendarConnection[]
+  credentials         Credential[]
+
+  // Default destination calendar for new events
+  defaultDestinationCalendarId String?           @map("default_destination_calendar_id")
+  defaultDestinationCalendar   ProviderCalendar? @relation("UserDefaultDestinationCalendar", fields: [defaultDestinationCalendarId], references: [id], onDelete: SetNull)
+
+  sessions             Session[]
+  impersonatedSessions Session[] @relation("ImpersonatedSessions")
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String   @db.Citext
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Session {
+  id             String   @id
+  expiresAt      DateTime @map("expires_at")
+  token          String
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  ipAddress      String?  @map("ip_address")
+  userAgent      String?  @map("user_agent")
+  userId         String   @map("user_id")
+  impersonatedBy String?  @map("impersonated_by")
+
+  user               User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedByUser User? @relation("ImpersonatedSessions", fields: [impersonatedBy], references: [id])
+
+  @@unique([token])
+  @@map("sessions")
+}
+
+model Verification {
+  id         String   @id
+  identifier String   @unique
+  value      String
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("verifications")
+  @@index([identifier])
+}
+
+// ============================================================================
+// Space Models
+// ============================================================================
+
+model Space {
+  id        String    @id @default(uuid())
+  name      String
+  image     String?
+  ownerId   String    @map("owner_id")
+  tier      SpaceTier @default(hobby)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  owner           User             @relation("UserSpaces", fields: [ownerId], references: [id], onDelete: Cascade)
+  polls           Poll[]
+  scheduledEvents ScheduledEvent[]
+  subscriptions   Subscription[]   @relation("SpaceToSubscription")
+
+  members SpaceMember[]
+
+  memberInvites SpaceMemberInvite[]
+
+  @@index([ownerId], type: Hash)
+  @@map("spaces")
+}
+
+model SpaceMember {
+  id             String          @id @default(uuid())
+  spaceId        String          @map("space_id")
+  userId         String          @map("user_id")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  role           SpaceMemberRole @default(MEMBER)
+  lastSelectedAt DateTime        @default(now()) @map("last_selected_at")
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([spaceId, userId])
+  @@index([spaceId], type: Hash, map: "space_members_space_id_idx")
+  @@index([userId], type: Hash, map: "space_members_user_id_idx")
+  @@map("space_members")
+}
+
+model SpaceMemberInvite {
+  id        String          @id @default(uuid())
+  spaceId   String          @map("space_id")
+  email     String
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+  role      SpaceMemberRole @default(MEMBER)
+  inviterId String          @map("inviter_id")
+
+  invitedBy User  @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+  space     Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([spaceId, email])
+  @@index([spaceId], type: Hash, map: "space_member_invites_space_id_idx")
+  @@map("space_member_invites")
+}
+
+// ============================================================================
+// Poll Models
+// ============================================================================
+
+model Poll {
+  id                      String     @id @unique @map("id")
+  createdAt               DateTime   @default(now()) @map("created_at")
+  updatedAt               DateTime   @updatedAt @map("updated_at")
+  deadline                DateTime?
+  title                   String
+  description             String?
+  location                String?
+  userId                  String?    @map("user_id")
+  guestId                 String?    @map("guest_id")
+  timeZone                String?    @map("time_zone")
+  status                  PollStatus @default(live)
+  deleted                 Boolean    @default(false)
+  deletedAt               DateTime?  @map("deleted_at")
+  touchedAt               DateTime   @default(now()) @map("touched_at") // @deprecated
+  participantUrlId        String     @unique @map("participant_url_id")
+  adminUrlId              String     @unique @map("admin_url_id")
+  eventId                 String?    @unique @map("event_id")
+  scheduledEventId        String?    @map("scheduled_event_id")
+  hideParticipants        Boolean    @default(false) @map("hide_participants")
+  hideScores              Boolean    @default(false) @map("hide_scores")
+  disableComments         Boolean    @default(false) @map("disable_comments")
+  requireParticipantEmail Boolean    @default(false) @map("require_participant_email")
+
+  user           User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduledEvent ScheduledEvent? @relation(fields: [scheduledEventId], references: [id], onDelete: SetNull)
+  options        Option[]
+  participants   Participant[]
+  watchers       Watcher[]
+  comments       Comment[]
+  votes          Vote[]
+  views          PollView[]
+  space          Space?          @relation(fields: [spaceId], references: [id], onDelete: SetNull)
+  spaceId        String?         @map("space_id")
+
+  @@index([guestId], type: Hash)
+  @@index([spaceId], type: Hash)
+  @@index([userId], type: Hash)
+  @@map("polls")
+}
+
+model Watcher {
+  id        Int      @id @default(autoincrement())
+  userId    String   @map("user_id")
+  pollId    String   @map("poll_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  poll Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([pollId], type: Hash)
+  @@map("watchers")
+}
+
+model Participant {
+  id        String    @id @default(cuid())
+  name      String
+  email     String?
+  userId    String?   @map("user_id")
+  guestId   String?   @map("guest_id")
+  pollId    String    @map("poll_id")
+  locale    String?
+  timeZone  String?   @map("time_zone")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+  deleted   Boolean   @default(false)
+  deletedAt DateTime? @map("deleted_at")
+
+  votes Vote[]
+
+  poll Poll  @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([pollId], type: Hash)
+  @@map("participants")
+}
+
+model Option {
+  id        String   @id @default(cuid())
+  startTime DateTime @map("start_time") @db.Timestamp(0)
+  duration  Int      @default(0) @map("duration_minutes")
+  pollId    String   @map("poll_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  votes Vote[]
+
+  poll Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  @@index([pollId], type: Hash)
+  @@map("options")
+}
+
+model Vote {
+  id            String    @id @default(cuid())
+  participantId String    @map("participant_id")
+  optionId      String    @map("option_id")
+  pollId        String    @map("poll_id")
+  type          VoteType  @default(yes)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime? @updatedAt @map("updated_at")
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  option      Option      @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  poll        Poll        @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  @@index([pollId], type: Hash)
+  @@index([participantId], type: Hash)
+  @@index([optionId], type: Hash)
+  @@map("votes")
+}
+
+model Comment {
+  id         String    @id @default(cuid())
+  content    String
+  pollId     String    @map("poll_id")
+  authorName String    @map("author_name")
+  userId     String?   @map("user_id")
+  guestId    String?   @map("guest_id")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime? @updatedAt @map("updated_at")
+
+  poll Poll  @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([pollId], type: Hash)
+  @@map("comments")
+}
+
+model PollView {
+  id        String   @id @default(cuid())
+  pollId    String   @map("poll_id")
+  ipAddress String?  @map("ip_address")
+  userId    String?  @map("user_id")
+  userAgent String?  @map("user_agent")
+  viewedAt  DateTime @default(now()) @map("viewed_at")
+
+  poll Poll  @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([pollId], type: Hash)
+  @@index([userId], type: Hash)
+  @@index([viewedAt])
+  @@map("poll_views")
+}
+
+// ============================================================================
+// Event Models
+// ============================================================================
+
+model ScheduledEvent {
+  id          String               @id @default(cuid())
+  userId      String               @map("user_id")
+  spaceId     String               @map("space_id")
+  title       String
+  description String?
+  location    String?
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+  status      ScheduledEventStatus @default(confirmed)
+  timeZone    String?              @map("time_zone")
+  start       DateTime
+  end         DateTime
+  allDay      Boolean              @default(false) @map("all_day")
+  deletedAt   DateTime?            @map("deleted_at")
+  sequence    Int                  @default(0)
+  uid         String               @unique
+
+  user             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  space            Space                  @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  rescheduledDates RescheduledEventDate[]
+  invites          ScheduledEventInvite[]
+  polls            Poll[]
+
+  @@index([spaceId], type: Hash)
+  @@index([userId], type: Hash)
+  @@map("scheduled_events")
+}
+
+model RescheduledEventDate {
+  id               String   @id @default(cuid())
+  scheduledEventId String   @map("scheduled_event_id")
+  start            DateTime @map("start")
+  end              DateTime @map("end")
+  allDay           Boolean  @default(false) @map("all_day")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  scheduledEvent ScheduledEvent @relation(fields: [scheduledEventId], references: [id], onDelete: Cascade)
+
+  @@index([scheduledEventId])
+  @@map("rescheduled_event_dates")
+}
+
+model ScheduledEventInvite {
+  id               String                     @id @default(cuid())
+  scheduledEventId String                     @map("scheduled_event_id")
+  inviteeName      String                     @map("invitee_name")
+  inviteeEmail     String                     @map("invitee_email")
+  inviteeId        String?                    @map("invitee_id")
+  inviteeTimeZone  String?                    @map("invitee_time_zone")
+  status           ScheduledEventInviteStatus @default(pending)
+  createdAt        DateTime                   @default(now()) @map("created_at")
+  updatedAt        DateTime                   @updatedAt @map("updated_at")
+
+  scheduledEvent ScheduledEvent @relation(fields: [scheduledEventId], references: [id], onDelete: Cascade)
+  user           User?          @relation(fields: [inviteeId], references: [id], onDelete: SetNull) // Optional relation to User model
+
+  @@index([scheduledEventId])
+  @@index([inviteeId])
+  @@index([inviteeEmail])
+  @@map("scheduled_event_invites")
+}
+
+// ============================================================================
+// Billing Models
+// ============================================================================
+
+model Subscription {
+  id                 String               @id
+  priceId            String               @map("price_id")
+  quantity           Int                  @default(1)
+  subscriptionItemId String               @map("subscription_item_id")
+  amount             Int
+  status             SubscriptionStatus
+  active             Boolean
+  currency           String
+  interval           SubscriptionInterval
+  createdAt          DateTime             @default(now()) @map("created_at")
+  periodStart        DateTime             @map("period_start")
+  periodEnd          DateTime             @map("period_end")
+  cancelAtPeriodEnd  Boolean              @default(false) @map("cancel_at_period_end")
+  userId             String               @map("user_id")
+  spaceId            String               @map("space_id")
+
+  user  User  @relation("UserToSubscription", fields: [userId], references: [id], onDelete: Cascade)
+  space Space @relation("SpaceToSubscription", fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@index([userId], type: Hash)
+  @@index([spaceId], type: Hash)
+  @@map("subscriptions")
+}
+
+model PaymentMethod {
+  id        String   @id
+  userId    String   @map("user_id")
+  type      String
+  data      Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payment_methods")
+}
+
+// ============================================================================
+// Integration Models
+// ============================================================================
+
+model Credential {
+  id                String         @id @default(cuid())
+  userId            String         @map("user_id")
+  provider          String
+  providerAccountId String         @map("provider_account_id")
+  type              CredentialType
+  secret            String         @map("secret")
+  scopes            String[]
+  expiresAt         DateTime?      @map("expires_at")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  // Relationships
+  calendarConnections CalendarConnection[]
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Constraints and indexes
+  @@unique([userId, provider, providerAccountId], name: "user_provider_account_unique")
+  @@index([expiresAt], name: "credential_expiry_idx")
+  @@map("credentials")
+}
+
+model CalendarConnection {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  provider          String
+  integrationId     String  @map("integration_id")
+  providerAccountId String  @map("provider_account_id")
+  email             String
+  displayName       String? @map("display_name")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  credential        Credential         @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+  credentialId      String             @map("credential_id")
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerCalendars ProviderCalendar[]
+
+  // Constraints and indexes
+  @@unique([userId, provider, providerAccountId], name: "user_provider_account_unique")
+  @@map("calendar_connections")
+}
+
+model ProviderCalendar {
+  id                   String @id @default(cuid())
+  calendarConnectionId String @map("calendar_connection_id")
+
+  // Provider's calendar data - common fields across all providers
+  providerCalendarId String  @map("provider_calendar_id")
+  name               String
+  isPrimary          Boolean @default(false) @map("primary")
+  timeZone           String? @map("time_zone")
+
+  // Selection and sync preferences  
+  isSelected Boolean @default(false) @map("selected")
+
+  // Provider state tracking
+  isDeleted  Boolean @default(false) @map("deleted")
+  isWritable Boolean @default(false) @map("writable")
+
+  // Provider-specific metadata stored as JSON
+  providerData Json? @map("provider_data")
+
+  // Timestamps
+  lastSyncedAt DateTime @default(now()) @map("last_synced_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  calendarConnection     CalendarConnection @relation(fields: [calendarConnectionId], references: [id], onDelete: Cascade)
+  userDefaultDestination User[]             @relation("UserDefaultDestinationCalendar")
+
+  // Indexes and constraints
+  @@unique([calendarConnectionId, providerCalendarId], name: "connection_calendar_unique")
+  @@index([calendarConnectionId, isSelected], name: "connection_selected_idx")
+  @@index([isPrimary], name: "primary_calendar_idx")
+  @@index([lastSyncedAt], name: "sync_time_idx")
+  @@map("provider_calendars")
+}
+
+// ============================================================================
+// Instance Settings
+// ============================================================================
+
+model InstanceSettings {
+  id                      Int     @id @default(1)
+  // Authentication & Security
+  disableUserRegistration Boolean @default(false) @map("disable_user_registration")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("instance_settings")
+}
+
+// ============================================================================
+// Licensing Models
+// ============================================================================
+
+model License {
+  id            String        @id @default(cuid())
+  licenseKey    String        @unique @map("license_key")
+  version       Int?          @map("version")
+  type          LicenseType
+  seats         Int?          @map("seats")
+  issuedAt      DateTime      @default(now()) @map("issued_at")
+  expiresAt     DateTime?     @map("expires_at")
+  licenseeEmail String?       @map("licensee_email")
+  licenseeName  String?       @map("licensee_name")
+  status        LicenseStatus @default(ACTIVE) @map("status")
+
+  validations LicenseValidation[]
+
+  @@map("licenses")
+}
+
+model LicenseValidation {
+  id          String   @id @default(cuid())
+  licenseId   String   @map("license_id")
+  license     License  @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  ipAddress   String?  @map("ip_address")
+  fingerprint String?  @map("fingerprint")
+  validatedAt DateTime @default(now()) @map("validated_at")
+  userAgent   String?  @map("user_agent")
+
+  @@map("license_validations")
+}
+
+model InstanceLicense {
+  id            String        @id @default(cuid())
+  licenseKey    String        @unique @map("license_key")
+  version       Int?          @map("version")
+  type          LicenseType
+  seats         Int?          @map("seats")
+  issuedAt      DateTime      @default(now()) @map("issued_at")
+  expiresAt     DateTime?     @map("expires_at")
+  licenseeEmail String?       @map("licensee_email")
+  licenseeName  String?       @map("licensee_name")
+  status        LicenseStatus @default(ACTIVE) @map("status")
+
+  @@map("instance_licenses")
 }

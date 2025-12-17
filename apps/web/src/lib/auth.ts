@@ -78,16 +78,12 @@ export function getAuthLib() {
     return _authLib;
   }
   
-  // Ensure Prisma Client is initialized and User model is accessible
+  // Ensure Prisma Client is initialized
   const prismaClient = prisma;
   
-  // Explicitly verify the User model exists before passing to better-auth
-  // This ensures better-auth's Prisma adapter can find it
-  if (!prismaClient.user) {
-    throw new Error(
-      "Prisma Client User model is not available. Make sure Prisma Client is generated correctly."
-    );
-  }
+  // Prisma Client models are accessed dynamically
+  // Better-auth's Prisma adapter will handle model access
+  // If the model doesn't exist, better-auth will throw a clear error
   
   _authLib = betterAuth({
     appName: "Rallly",
