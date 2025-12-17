@@ -14,20 +14,27 @@ import { isInitialAdmin } from "@/utils/is-initial-admin";
  * Gets the current user if they are logged in, otherwise null.
  * @returns The current user if they are logged in, otherwise null.
  */
+// Public demo mode: Safe getCurrentUser that doesn't crash if auth fails
 export const getCurrentUser = async () => {
-  const session = await getSession();
+  try {
+    const session = await getSession();
 
-  if (!session?.user || session.user.isGuest) {
+    if (!session?.user || session.user.isGuest) {
+      return null;
+    }
+
+    const user = await getUser(session.user.id);
+
+    if (!user) {
+      return null;
+    }
+
+    return user;
+  } catch (error) {
+    // Public demo mode: Return null if auth fails instead of crashing
+    console.warn("getCurrentUser failed (expected in demo mode):", error);
     return null;
   }
-
-  const user = await getUser(session.user.id);
-
-  if (!user) {
-    return null;
-  }
-
-  return user;
 };
 
 export const getCurrentUserSpace = async () => {
@@ -79,6 +86,11 @@ export const getCurrentUserSpace = async () => {
 export const requireAdmin = cache(async () => {
   const user = await requireUser();
 
+  // Public demo mode: return null if no user
+  if (!user) {
+    return null;
+  }
+
   if (user.role !== "admin") {
     if (isInitialAdmin(user.email)) {
       return redirect("/admin-setup");
@@ -86,23 +98,21 @@ export const requireAdmin = cache(async () => {
 
     notFound();
   }
+  
+  return user;
 });
 
 export const requireUser = cache(async () => {
   const session = await getSession();
-  const headersList = await headers();
-  const pathname = headersList.get("x-pathname") ?? "/";
 
   if (!session?.user || session.user.isGuest) {
-    const searchParams = new URLSearchParams();
-    searchParams.set("redirectTo", pathname);
-    redirect(`/login?${searchParams.toString()}`);
+    return null;
   }
 
   const user = await getUser(session.user.id);
 
   if (!user) {
-    redirect("/api/auth/invalid-session");
+    return null;
   }
 
   return user;
@@ -110,6 +120,10 @@ export const requireUser = cache(async () => {
 
 export const requireSpace = cache(async () => {
   const user = await requireUser();
+
+  if (!user) {
+    return null;
+  }
 
   const spaceMember = await prisma.spaceMember.findFirst({
     where: {
@@ -132,7 +146,7 @@ export const requireSpace = cache(async () => {
   });
 
   if (!spaceMember) {
-    redirect("/setup");
+    return null;
   }
 
   return createSpaceDTO({

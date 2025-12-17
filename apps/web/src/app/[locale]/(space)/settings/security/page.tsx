@@ -32,6 +32,28 @@ export default async function SecurityPage({
 }) {
   const { setupPassword } = await searchParams;
   const user = await requireUser();
+  
+  // Public demo mode: handle null user gracefully
+  if (!user) {
+    return (
+      <SettingsPage>
+        <SettingsPageHeader>
+          <SettingsPageTitle>
+            <Trans i18nKey="security" defaults="Security" />
+          </SettingsPageTitle>
+        </SettingsPageHeader>
+        <SettingsPageContent>
+          <PageSectionGroup>
+            <PageSection variant="card">
+              <PageSectionContent>
+                <Trans i18nKey="loginRequired" defaults="Please log in to access settings." />
+              </PageSectionContent>
+            </PageSection>
+          </PageSectionGroup>
+        </SettingsPageContent>
+      </SettingsPage>
+    );
+  }
   const isEmailLoginEnabled = isFeatureEnabled("emailLogin");
   const hasPassword = isEmailLoginEnabled
     ? await getUserHasPassword(user.id)

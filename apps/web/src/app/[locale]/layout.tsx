@@ -11,12 +11,9 @@ import type React from "react";
 
 import { TimeZoneChangeDetector } from "@/app/[locale]/timezone-change-detector";
 import type { Params } from "@/app/[locale]/types";
-import { requireUser } from "@/auth/data";
 import { UserProvider } from "@/components/user-provider";
 import { PreferencesProvider } from "@/contexts/preferences";
-import type { UserDTO } from "@/features/user/schema";
 import { I18nProvider } from "@/i18n/client";
-import { getSession } from "@/lib/auth";
 import { FeatureFlagsProvider } from "@/lib/feature-flags/client";
 import { featureFlagConfig } from "@/lib/feature-flags/config";
 import { LocaleSync } from "@/lib/locale/client";
@@ -36,28 +33,11 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+// Public demo mode: No auth initialization
 async function loadData() {
-  const [session] = await Promise.all([getSession()]);
-
-  const user = session?.user
-    ? !session.user.isGuest
-      ? await requireUser()
-      : ({
-          id: session.user.id,
-          name: "Guest",
-          isGuest: true,
-          email: `${session.user.id}@rallly.co`,
-          role: "user",
-          locale: session.user.locale ?? undefined,
-          timeZone: session.user.timeZone ?? undefined,
-          timeFormat: session.user.timeFormat ?? undefined,
-          weekStart: session.user.weekStart ?? undefined,
-        } satisfies UserDTO)
-    : null;
-
+  // Return null user - no auth session or user data
   return {
-    session,
-    user,
+    user: null,
   };
 }
 
@@ -84,7 +64,7 @@ export default async function Root({
               <LazyMotion features={domAnimation}>
                 <PostHogProvider>
                   <PostHogIdentify
-                    distinctId={user && !user.isGuest ? user.id : undefined}
+                    distinctId={undefined}
                   />
                   <PostHogPageView />
                   <TooltipProvider>

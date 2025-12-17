@@ -28,6 +28,29 @@ import { ProfileSettings } from "./profile-settings";
 
 export default async function Page() {
   const user = await requireUser();
+  
+  // Public demo mode: handle null user gracefully
+  if (!user) {
+    return (
+      <SettingsPage>
+        <SettingsPageHeader>
+          <SettingsPageTitle>
+            <Trans i18nKey="profile" defaults="Profile" />
+          </SettingsPageTitle>
+        </SettingsPageHeader>
+        <SettingsPageContent>
+          <PageSectionGroup>
+            <PageSection variant="card">
+              <PageSectionContent>
+                <Trans i18nKey="loginRequired" defaults="Please log in to access settings." />
+              </PageSectionContent>
+            </PageSection>
+          </PageSectionGroup>
+        </SettingsPageContent>
+      </SettingsPage>
+    );
+  }
+  
   return (
     <SettingsPage>
       <SettingsPageHeader>

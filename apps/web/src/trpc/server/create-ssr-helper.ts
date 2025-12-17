@@ -28,13 +28,9 @@ async function createContext(): Promise<TRPCContext> {
  * @see https://trpc.io/docs/client/nextjs/server-side-helpers#1-internal-router
  */
 export const createSSRHelper = async () => {
-  try {
-    return createServerSideHelpers({
-      router: appRouter,
-      ctx: await createContext(),
-      transformer: superjson,
-    });
-  } catch {
-    return redirect("/login");
-  }
+  return createServerSideHelpers({
+    router: appRouter,
+    ctx: await createContext(),
+    transformer: superjson,
+  });
 };

@@ -19,9 +19,8 @@ export default async function Page() {
     getRegistrationEnabled(),
   ]);
 
-  if (!user && !isQuickCreateEnabled) {
-    redirect(`/login?redirectTo=${encodeURIComponent("/new")}`);
-  }
+  // Public demo mode: allow access without auth
+  // Removed login redirect - page is accessible to all users
 
   return (
     <div className="absolute inset-0 h-dvh overflow-auto bg-gray-100">

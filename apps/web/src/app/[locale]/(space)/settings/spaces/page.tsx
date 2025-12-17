@@ -17,6 +17,28 @@ import { SpacesList } from "./components/spaces-list";
 
 export default async function Page() {
   const [spaces, user] = await Promise.all([loadSpaces(), requireUser()]);
+  
+  // Public demo mode: handle null user gracefully
+  if (!user) {
+    return (
+      <SettingsPage>
+        <SettingsPageHeader>
+          <SettingsPageTitle>
+            <Trans i18nKey="spaces" defaults="Spaces" />
+          </SettingsPageTitle>
+        </SettingsPageHeader>
+        <SettingsPageContent>
+          <PageSectionGroup>
+            <PageSection variant="card">
+              <PageSectionContent>
+                <Trans i18nKey="loginRequired" defaults="Please log in to access settings." />
+              </PageSectionContent>
+            </PageSection>
+          </PageSectionGroup>
+        </SettingsPageContent>
+      </SettingsPage>
+    );
+  }
 
   return (
     <SettingsPage>

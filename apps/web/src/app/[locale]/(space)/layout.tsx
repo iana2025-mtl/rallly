@@ -19,6 +19,15 @@ export default async function Layout({
 }) {
   const { user, space } = await loadData();
 
+  // Public demo mode: render without space/user providers if not authenticated
+  if (!space || !user) {
+    return (
+      <BillingProvider>
+        {children}
+      </BillingProvider>
+    );
+  }
+
   return (
     <SpaceProvider key={space.id} data={space} userId={user.id}>
       <BillingProvider>

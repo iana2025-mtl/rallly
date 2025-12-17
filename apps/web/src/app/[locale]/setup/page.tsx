@@ -10,6 +10,11 @@ import { getTranslation } from "@/i18n/server";
 
 export default async function SetupPage() {
   const user = await requireUser();
+  
+  // Public demo mode: handle null user gracefully
+  if (!user) {
+    redirect("/");
+  }
 
   if (await userHasSpaces(user.id)) {
     redirect("/");

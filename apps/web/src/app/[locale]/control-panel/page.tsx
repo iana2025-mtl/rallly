@@ -23,10 +23,19 @@ import { Trans } from "@/components/trans";
 import { loadInstanceLicense } from "@/features/licensing/data";
 
 async function loadData() {
+  const admin = await requireAdmin();
+  
+  // Public demo mode: handle null admin gracefully
+  if (!admin) {
+    return {
+      userCount: 0,
+      license: null,
+    };
+  }
+  
   const [userCount, license] = await Promise.all([
     prisma.user.count(),
     loadInstanceLicense(),
-    requireAdmin(),
   ]);
 
   return {
@@ -37,6 +46,30 @@ async function loadData() {
 
 export default async function AdminPage() {
   const { userCount, license } = await loadData();
+  
+  // Public demo mode: show empty state if no admin
+  if (!license && userCount === 0) {
+    return (
+      <FullWidthLayout>
+        <FullWidthLayoutHeader>
+          <FullWidthLayoutTitle
+            icon={
+              <PageIcon size="sm" color="indigo">
+                <GaugeIcon />
+              </PageIcon>
+            }
+          >
+            <Trans i18nKey="controlPanel" defaults="Control Panel" />
+          </FullWidthLayoutTitle>
+        </FullWidthLayoutHeader>
+        <FullWidthLayoutContent>
+          <div className="text-center py-12">
+            <Trans i18nKey="loginRequired" defaults="Please log in to access the control panel." />
+          </div>
+        </FullWidthLayoutContent>
+      </FullWidthLayout>
+    );
+  }
 
   const userLimit = license?.seats ?? 1;
   const tier = license?.type;

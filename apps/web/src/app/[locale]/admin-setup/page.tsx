@@ -18,6 +18,11 @@ import { MakeMeAdminButton } from "./make-me-admin-button";
 
 export default async function AdminSetupPage() {
   const user = await requireUser();
+  
+  // Public demo mode: handle null user gracefully
+  if (!user) {
+    notFound();
+  }
 
   if (user.role === "admin") {
     redirect("/control-panel");

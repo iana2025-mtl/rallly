@@ -27,6 +27,29 @@ import { SpaceSettingsForm } from "./components/space-settings-form";
 
 export default async function GeneralSettingsPage() {
   const [space, user] = await Promise.all([requireSpace(), requireUser()]);
+  
+  // Public demo mode: handle null user/space gracefully
+  if (!space || !user) {
+    return (
+      <SettingsPage>
+        <SettingsPageHeader>
+          <SettingsPageTitle>
+            <Trans i18nKey="general" defaults="General" />
+          </SettingsPageTitle>
+        </SettingsPageHeader>
+        <SettingsPageContent>
+          <PageSectionGroup>
+            <PageSection variant="card">
+              <PageSectionContent>
+                <Trans i18nKey="loginRequired" defaults="Please log in to access settings." />
+              </PageSectionContent>
+            </PageSection>
+          </PageSectionGroup>
+        </SettingsPageContent>
+      </SettingsPage>
+    );
+  }
+  
   const ability = defineAbilityForMember({ space, user });
   const isAdmin = space.role === "admin";
   const canDeleteSpace = ability.can("delete", subject("Space", { ...space }));

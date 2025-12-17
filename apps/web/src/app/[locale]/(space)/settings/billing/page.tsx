@@ -29,6 +29,28 @@ export default async function BillingSettingsPage() {
     notFound();
   }
   const [space, user] = await Promise.all([requireSpace(), requireUser()]);
+  
+  // Public demo mode: handle null user/space gracefully
+  if (!space || !user) {
+    return (
+      <SettingsPage>
+        <SettingsPageHeader>
+          <SettingsPageTitle>
+            <Trans i18nKey="billing" defaults="Billing" />
+          </SettingsPageTitle>
+        </SettingsPageHeader>
+        <SettingsPageContent>
+          <PageSectionGroup>
+            <PageSection variant="card">
+              <PageSectionContent>
+                <Trans i18nKey="loginRequired" defaults="Please log in to access settings." />
+              </PageSectionContent>
+            </PageSection>
+          </PageSectionGroup>
+        </SettingsPageContent>
+      </SettingsPage>
+    );
+  }
 
   const ability = defineAbilityForMember({ space, user });
   const canManageBilling = ability.can("manage", "Billing");

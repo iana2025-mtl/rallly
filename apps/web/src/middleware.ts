@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { supportedLngs } from "@rallly/languages";
 import { getLocaleFromRequest, setLocaleCookie } from "@/lib/locale/server";
 
+// Public demo mode: Middleware handles locale routing only
+// No authentication enforcement or redirects to /login
 export const middleware = async (req: NextRequest) => {
   const { nextUrl } = req;
   const newUrl = nextUrl.clone();

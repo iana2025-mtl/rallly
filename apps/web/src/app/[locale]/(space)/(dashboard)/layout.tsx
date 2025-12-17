@@ -27,6 +27,7 @@ import { CommandMenu } from "@/features/navigation/command-menu";
 import { SpaceDropdown } from "@/features/space/components/space-dropdown";
 import { loadSpaces } from "@/features/space/data";
 import { IfFeatureEnabled } from "@/lib/feature-flags/client";
+import { SidebarProvider } from "@rallly/ui/sidebar";
 import { SpaceSidebarProvider } from "./components/space-sidebar-provider";
 
 export default async function Layout({
@@ -39,6 +40,17 @@ export default async function Layout({
     requireSpace(),
     loadSpaces(),
   ]);
+
+  // Public demo mode: render without sidebar if not authenticated
+  if (!user || !activeSpace) {
+    return (
+      <SidebarProvider>
+        <div className="flex flex-1 flex-col">
+          <div className="flex flex-1 flex-col">{children}</div>
+        </div>
+      </SidebarProvider>
+    );
+  }
 
   return (
     <SpaceSidebarProvider>
@@ -92,6 +104,15 @@ export default async function Layout({
 
 export async function generateMetadata(): Promise<Metadata> {
   const space = await requireSpace();
+  // Public demo mode: return default metadata if no space
+  if (!space) {
+    return {
+      title: {
+        template: `%s | Rallly`,
+        default: "Rallly",
+      },
+    };
+  }
   return {
     title: {
       template: `%s | ${space.name} | Rallly`,

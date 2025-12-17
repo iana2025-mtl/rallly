@@ -34,6 +34,29 @@ import { MemberDropdownMenu } from "./components/member-dropdown-menu";
 
 export default async function MembersSettingsPage() {
   const space = await requireSpace();
+  
+  // Public demo mode: handle null space gracefully
+  if (!space) {
+    return (
+      <SettingsPage>
+        <SettingsPageHeader>
+          <SettingsPageTitle>
+            <Trans i18nKey="members" defaults="Members" />
+          </SettingsPageTitle>
+        </SettingsPageHeader>
+        <SettingsPageContent>
+          <PageSectionGroup>
+            <PageSection variant="card">
+              <PageSectionContent>
+                <Trans i18nKey="loginRequired" defaults="Please log in to access settings." />
+              </PageSectionContent>
+            </PageSection>
+          </PageSectionGroup>
+        </SettingsPageContent>
+      </SettingsPage>
+    );
+  }
+  
   const [members, invites, totalSeats] = await Promise.all([
     loadMembers(),
     loadInvites(),

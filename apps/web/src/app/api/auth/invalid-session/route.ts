@@ -17,5 +17,5 @@ export async function GET(req: NextRequest) {
     console.error("FAILED TO SIGN OUT", error);
   }
 
-  return NextResponse.redirect(new URL("/login", req.url));
+  return NextResponse.redirect(new URL("/", req.url));
 }

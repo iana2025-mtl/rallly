@@ -1,10 +1,8 @@
 "use client";
-import { useRouter } from "next/navigation";
 import React from "react";
 import type { UserAbility } from "@/features/user/ability";
 import { defineAbilityFor } from "@/features/user/ability";
 import type { UserDTO } from "@/features/user/schema";
-import { authClient } from "@/lib/auth-client";
 import { isOwner } from "@/utils/permissions";
 import { useRequiredContext } from "./use-required-context";
 
@@ -29,6 +27,7 @@ export const useUser = () => {
   return useRequiredContext(UserContext, "UserContext");
 };
 
+// Public demo mode: UserProvider without auth client initialization
 export const UserProvider = ({
   children,
   user,
@@ -36,22 +35,17 @@ export const UserProvider = ({
   children?: React.ReactNode;
   user?: UserDTO;
 }) => {
-  const router = useRouter();
   const value = React.useMemo<UserContextValue>(() => {
     return {
       user,
       createGuestIfNeeded: async () => {
-        const isLegacyGuest = user?.id.startsWith("user-");
-        if (!user || isLegacyGuest) {
-          await authClient.signIn.anonymous();
-          router.refresh();
-        }
+        // Public demo mode: no-op, no guest creation needed
       },
       getAbility: () => defineAbilityFor(user),
       ownsObject: (resource) => {
         return user ? isOwner(resource, { id: user.id }) : false;
       },
     };
-  }, [user, router]);
+  }, [user]);
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };

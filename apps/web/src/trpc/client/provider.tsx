@@ -35,7 +35,7 @@ export function TRPCProvider(props: { children: React.ReactNode }) {
               });
               switch (error.data.code) {
                 case "UNAUTHORIZED":
-                  window.location.href = "/login";
+                  // Public demo mode: no redirect needed
                   break;
                 case "TOO_MANY_REQUESTS":
                   toast.error(

@@ -66,6 +66,10 @@ export function createSpaceDTO(space: {
 
 export const loadSpaces = cache(async () => {
   const user = await requireUser();
+  // Public demo mode: return empty array if no user
+  if (!user) {
+    return [];
+  }
   const ability = defineAbilityFor(user);
   const spaces = await prisma.space.findMany({
     where: accessibleBy(ability).Space,

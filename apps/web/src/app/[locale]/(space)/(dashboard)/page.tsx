@@ -34,6 +34,18 @@ import { PasswordSetupAlert } from "./password-setup-alert";
 async function loadData() {
   const [space, user] = await Promise.all([requireSpace(), requireUser()]);
 
+  // Public demo mode: return empty data if no auth
+  if (!space || !user) {
+    return {
+      livePollCount: 0,
+      upcomingEventCount: 0,
+      memberCount: 0,
+      seatCount: 0,
+      canManageBilling: false,
+      hasNoAccounts: false,
+    };
+  }
+
   const [
     livePollCount,
     upcomingEventCount,
