@@ -5,16 +5,18 @@ import {
   passwordQualityThresholds,
 } from "@/features/password/utils";
 import { useTranslation } from "@/i18n/client";
-import { env as runtimeEnv } from "next-runtime-env";
+import { useFeatureFlags } from "@/lib/feature-flags/client";
 
 export function usePasswordValidationSchema() {
   const { t } = useTranslation();
-  // Check DEMO_MODE from runtime environment (available on client)
-  const isDemoMode = runtimeEnv("DEMO_MODE") === "true";
+  const featureFlags = useFeatureFlags();
+  // In demo mode or when registration is enabled, relax password requirements
+  // This allows simple passwords for hobby/school projects
+  const shouldRelaxRequirements = featureFlags?.registration === true;
   
-  // In demo mode, only require minimum length (8 chars) - no strength requirement
+  // When relaxed, only require minimum length (8 chars) - no strength requirement
   // For production, require "good" strength (score 3/4)
-  if (isDemoMode) {
+  if (shouldRelaxRequirements) {
     return z.string().min(8, t("passwordMinLength", {
       defaultValue: "Password must be at least 8 characters long.",
     }));
