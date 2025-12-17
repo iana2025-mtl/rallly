@@ -262,6 +262,12 @@ export const authLib = betterAuth({
     user: {
       create: {
         after: async (user) => {
+          // In demo mode, completely skip the hook to avoid any errors
+          // This ensures registration always succeeds
+          if (env.DEMO_MODE === "true") {
+            return;
+          }
+
           // Fail-safe: Never throw errors from this hook
           // Registration must succeed even if post-registration tasks fail
           try {
