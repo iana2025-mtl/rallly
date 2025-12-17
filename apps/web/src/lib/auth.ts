@@ -248,17 +248,25 @@ export const authLib = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          if (user.isAnonymous) {
-            return;
-          }
-          
+          // Fail-safe: Never throw errors from this hook
+          // Registration must succeed even if post-registration tasks fail
           try {
+            if (user.isAnonymous) {
+              return;
+            }
+            
             // Check if user already has a space to avoid duplicates
-            const existingSpace = await prisma.space.findFirst({
-              where: {
-                ownerId: user.id,
-              },
-            });
+            let existingSpace = null;
+            try {
+              existingSpace = await prisma.space.findFirst({
+                where: {
+                  ownerId: user.id,
+                },
+              });
+            } catch (prismaError) {
+              console.error("Failed to check for existing space:", prismaError);
+              // Continue - we'll try to create space anyway if check fails
+            }
 
             // Only create space if user doesn't have one
             if (!existingSpace) {
@@ -268,53 +276,65 @@ export const authLib = betterAuth({
                   ownerId: user.id,
                 });
 
-                const posthog = PostHogClient();
-                posthog?.groupIdentify({
-                  groupType: "space",
-                  groupKey: space.id,
-                  properties: {
-                    name: space.name,
-                    memberCount: 1,
-                    seatCount: 1,
-                    tier: "hobby",
-                  },
-                });
+                // Track space creation (non-blocking)
+                try {
+                  const posthog = PostHogClient();
+                  if (posthog) {
+                    posthog.groupIdentify({
+                      groupType: "space",
+                      groupKey: space.id,
+                      properties: {
+                        name: space.name,
+                        memberCount: 1,
+                        seatCount: 1,
+                        tier: "hobby",
+                      },
+                    });
+                  }
+                } catch (posthogError) {
+                  console.error("Failed to track space creation:", posthogError);
+                }
               } catch (spaceError) {
                 // Log but don't fail registration if space creation fails
                 console.error("Failed to create space for user:", spaceError);
               }
             }
 
-            // Track registration event
+            // Track registration event (non-blocking)
             try {
               const posthog = PostHogClient();
-              posthog?.capture({
-                distinctId: user.id,
-                event: "register",
-                properties: {
-                  method: user.lastLoginMethod,
-                  $set: {
-                    name: user.name,
-                    email: user.email,
-                    tier: "hobby",
-                    timeZone: user.timeZone ?? undefined,
-                    locale: user.locale ?? undefined,
-                  },
-                },
-              });
-
               if (posthog) {
-                waitUntil(posthog.shutdown());
+                posthog.capture({
+                  distinctId: user.id,
+                  event: "register",
+                  properties: {
+                    method: user.lastLoginMethod,
+                    $set: {
+                      name: user.name,
+                      email: user.email,
+                      tier: "hobby",
+                      timeZone: user.timeZone ?? undefined,
+                      locale: user.locale ?? undefined,
+                    },
+                  },
+                });
+
+                // Use waitUntil in a try-catch to prevent it from throwing
+                try {
+                  waitUntil(posthog.shutdown());
+                } catch (waitError) {
+                  console.error("Failed to wait for PostHog shutdown:", waitError);
+                }
               }
             } catch (posthogError) {
               // Log but don't fail registration if PostHog fails
               console.error("Failed to track registration event:", posthogError);
             }
           } catch (error) {
-            // Log error but don't fail user creation
-            // This ensures registration succeeds even if the hook fails
-            console.error("Error in user.create.after hook:", error);
-            // Explicitly return to prevent any error from propagating
+            // Ultimate fail-safe: Log and return, never throw
+            // This ensures registration always succeeds
+            console.error("Error in user.create.after hook (non-fatal):", error);
+            // Explicitly return void to ensure no error propagation
             return;
           }
         },
