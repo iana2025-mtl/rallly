@@ -10,11 +10,12 @@ import { signOut as nextAuthSignOut } from "next-auth/react";
 import { env } from "@/env";
 import type { Auth } from "@/lib/auth";
 
-// Use relative URL to avoid CORS issues, or fallback to current origin
+// Get absolute base URL for auth client
+// Use current window origin to avoid CORS issues with Vercel preview URLs
 function getAuthBaseURL() {
   if (typeof window !== "undefined") {
-    // Client-side: use relative URL or current origin
-    return "/api/better-auth";
+    // Client-side: use current window origin to avoid CORS
+    return `${window.location.origin}/api/better-auth`;
   }
   // Server-side: use configured base URL
   return `${env.NEXT_PUBLIC_BASE_URL}/api/better-auth`;
