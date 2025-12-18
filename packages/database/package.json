@@ -12,7 +12,9 @@
   },
   "exports": "./index.ts",
   "dependencies": {
+    "@noble/hashes": "^2.0.1",
     "@prisma/client": "^6.8.2",
+    "argon2": "^0.44.0",
     "dayjs": "^1.11.13"
   },
   "devDependencies": {

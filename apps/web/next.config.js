@@ -53,8 +53,8 @@ const nextConfig = {
     return [
       {
         source: "/",
-        destination: "/en",
-        permanent: false, // Use temporary redirect to allow locale detection
+        destination: "/en/login",
+        permanent: false, // Redirect to login page
       },
       {
         source: "/support",

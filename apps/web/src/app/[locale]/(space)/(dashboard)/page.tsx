@@ -2,6 +2,7 @@ import { prisma } from "@rallly/database";
 import { Tile, TileDescription, TileGrid, TileTitle } from "@rallly/ui/tile";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   BillingPageIcon,
   CreatePageIcon,
@@ -101,7 +102,18 @@ async function loadData() {
   }
 }
 
-export default async function Page() {
+
+export default async function Page(props: {
+  params: Promise<{ locale: string }>;
+}) {
+  const params = await props.params;
+  const user = await getCurrentUser();
+  
+  // Redirect to login if not authenticated
+  if (!user) {
+    redirect(`/${params.locale}/login`);
+  }
+
   const {
     livePollCount,
     upcomingEventCount,
@@ -112,7 +124,6 @@ export default async function Page() {
   } = await loadData();
 
   const isEmailLoginEnabled = isFeatureEnabled("emailLogin");
-  const user = await getCurrentUser();
 
   return (
     <PageContainer className="bg-gradient-to-br from-[#ffe5e9]/20 via-white to-[#fdd7c2]/20 min-h-screen">
