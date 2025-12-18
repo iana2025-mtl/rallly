@@ -49,13 +49,13 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  async redirects() {
-    return [
-      {
-        source: "/",
-        destination: "/en",
-        permanent: false, // Redirect to locale - middleware will handle auth check
-      },
+    async redirects() {
+      return [
+        {
+          source: "/",
+          destination: "/en/login", // Redirect directly to login page
+          permanent: false,
+        },
       {
         source: "/support",
         destination: "https://support.rallly.co",

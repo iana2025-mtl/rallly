@@ -1,20 +1,25 @@
 /**
- * Script to fix demo user password hash and generate mock data for AI suggestions
+ * Script to verify demo user and generate mock data for AI suggestions
+ * 
+ * IMPORTANT: This script does NOT modify the password hash!
+ * The password hash must be set correctly using fix-password-via-api.ts first.
  * 
  * This script:
- * 1. Fixes the password hash for demo@test.com (uses correct Argon2 format)
+ * 1. Verifies demo@test.com user exists and has credential account
  * 2. Ensures email is verified
  * 3. Creates a default space if missing
  * 4. Generates mock historical polls for AI time suggestions
  * 
  * Usage: 
  *   DATABASE_URL="your-production-db-url" pnpm tsx packages/database/scripts/fix-demo-user-and-generate-mock-data.ts
+ * 
+ * Prerequisites:
+ *   Run fix-password-via-api.ts first to create user with correct password hash
  */
 
 import { prisma } from "@rallly/database";
 import { createId } from "@paralleldrive/cuid2";
 import dayjs from "dayjs";
-import argon2 from "argon2";
 
 // Mock user data for poll participants
 const mockUsers = [
@@ -52,31 +57,11 @@ function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-async function hashPassword(password: string): Promise<string> {
-    // better-auth uses Argon2id with specific parameters
-    // The argon2 package produces a hash in the format: $argon2id$v=19$m=65536,t=3,p=4$salt$hash
-    // But better-auth might expect a slightly different format
-    // Let's use the standard argon2 format which should be compatible
-    const hash = await argon2.hash(password, {
-      type: argon2.argon2id,
-      timeCost: 3,
-      memoryCost: 65536, // 64 MB in KB
-      parallelism: 4,
-      saltLength: 16,
-      hashLength: 32,
-    });
-    
-    // The hash is already in the correct format
-    // Format: $argon2id$v=19$m=65536,t=3,p=4$salt$hash
-    return hash;
-  }
-
 async function fixDemoUser() {
   const email = "demo@test.com";
-  const password = "demo123456";
 
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("🔧 Fixing Demo User Password Hash");
+  console.log("🔧 Verifying Demo User (NOT changing password)");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
   // Find existing user
@@ -92,12 +77,13 @@ async function fixDemoUser() {
 
   if (!user) {
     console.error(`❌ User with email ${email} not found!`);
-    console.log("   Please register first at /register");
+    console.log("   Please run fix-password-via-api.ts first to create the user.");
     process.exit(1);
   }
 
   console.log(`✅ Found user: ${user.name} (${user.id})`);
   console.log(`   Email Verified: ${user.emailVerified ?? false}`);
+  console.log(`   Has Credential Account: ${user.accounts.length > 0}`);
 
   // Update email verification if needed
   if (!user.emailVerified) {
@@ -109,31 +95,13 @@ async function fixDemoUser() {
     console.log("✅ Email verified\n");
   }
 
-  // Hash password using Argon2 (same as better-auth)
-  console.log("🔐 Generating correct Argon2 password hash...");
-  const hashedPassword = await hashPassword(password);
-  console.log("✅ Password hashed\n");
-
-  // Update or create credential account
-  if (user.accounts.length > 0) {
-    console.log("📝 Updating existing credential account with correct password hash...");
-    await prisma.account.update({
-      where: { id: user.accounts[0].id },
-      data: { password: hashedPassword },
-    });
-    console.log("✅ Password hash updated\n");
+  // DON'T TOUCH THE PASSWORD HASH - it was set correctly by fix-password-via-api.ts
+  if (user.accounts.length === 0) {
+    console.log("⚠️  WARNING: User has no credential account!");
+    console.log("   Please run fix-password-via-api.ts first to create the account with correct password hash.");
+    console.log("   Skipping password setup to avoid breaking login.\n");
   } else {
-    console.log("📝 Creating credential account...");
-    await prisma.account.create({
-      data: {
-        id: createId(),
-        userId: user.id,
-        provider: "credential",
-        providerAccountId: email,
-        password: hashedPassword,
-      },
-    });
-    console.log("✅ Credential account created\n");
+    console.log("✅ Credential account exists - NOT modifying password hash (preserving correct format)\n");
   }
 
   // Ensure user has a space
@@ -163,11 +131,11 @@ async function fixDemoUser() {
   }
 
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("✅ Demo user fixed successfully!");
+  console.log("✅ Demo user verified (password NOT changed)!");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("Demo Credentials:");
   console.log(`Email: ${email}`);
-  console.log(`Password: ${password}`);
+  console.log(`Password: demo123456`);
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
   return { user, space };
@@ -193,9 +161,46 @@ async function generateMockData(userId: string, spaceId: string) {
     const shouldRegenerate = process.argv.includes("--force");
     if (!shouldRegenerate) {
       console.log("   Use --force flag to regenerate mock data anyway.\n");
+      // Still return - user has enough data
       return;
     }
-    console.log("   Regenerating mock data...\n");
+    console.log("   Regenerating mock data (deleting old polls)...\n");
+    
+    // Delete old finalized polls if forcing regeneration
+    await prisma.vote.deleteMany({
+      where: {
+        poll: {
+          userId,
+          status: "finalized",
+        },
+      },
+    });
+    await prisma.participant.deleteMany({
+      where: {
+        poll: {
+          userId,
+          status: "finalized",
+        },
+      },
+    });
+    await prisma.option.deleteMany({
+      where: {
+        poll: {
+          userId,
+          status: "finalized",
+        },
+      },
+    });
+    await prisma.poll.deleteMany({
+      where: {
+        userId,
+        status: "finalized",
+      },
+    });
+    console.log("   ✅ Old polls deleted\n");
+  } else if (existingPolls > 0) {
+    console.log(`⚠️  User has ${existingPolls} finalized polls (need at least 3).`);
+    console.log("   Generating additional polls...\n");
   }
 
   // Create mock polls with finalized status
@@ -351,7 +356,7 @@ async function generateMockData(userId: string, spaceId: string) {
 
 async function main() {
   try {
-    // Step 1: Fix demo user password
+    // Step 1: Verify demo user (don't touch password hash)
     const { user, space } = await fixDemoUser();
 
     // Step 2: Generate mock data

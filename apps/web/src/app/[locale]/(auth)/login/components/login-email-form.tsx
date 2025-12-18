@@ -92,7 +92,14 @@ export function LoginWithEmailForm() {
               return;
             }
 
-            router.push(validatedRedirectTo ?? "/");
+            // Redirect to dashboard or the validated redirect URL
+            // Get locale from current pathname
+            const currentPath = window.location.pathname;
+            const localeMatch = currentPath.match(/^\/([^/]+)/);
+            const locale = localeMatch ? localeMatch[1] : "en";
+            const redirectPath = validatedRedirectTo || `/${locale}`;
+            // Use window.location for a full page reload to ensure server-side user data is loaded
+            window.location.href = redirectPath;
 
             return;
           } else {

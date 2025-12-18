@@ -378,38 +378,55 @@ export function getAuthLib() {
     session: {
       create: {
         after: async (session) => {
-          // Merge legacy guest users into new user
-          const legacySession = await legacyAuth();
+          // Wrap in try-catch to prevent session creation from failing
+          try {
+            // Merge legacy guest users into new user
+            const legacySession = await legacyAuth().catch(() => null);
 
-          if (legacySession) {
-            if (legacySession.user?.isGuest) {
-              await mergeGuestsIntoUser(session.userId, legacySession.user.id);
+            if (legacySession) {
+              if (legacySession.user?.isGuest) {
+                await mergeGuestsIntoUser(session.userId, legacySession.user.id).catch(
+                  (error) => {
+                    console.error("Failed to merge guests:", error);
+                  },
+                );
+              }
+              // Delete legacy session
+              await legacySignOut({
+                redirect: false,
+              }).catch((error) => {
+                console.error("Failed to sign out legacy session:", error);
+              });
             }
-            // Delete legacy session
-            await legacySignOut({
-              redirect: false,
-            });
-          }
 
-          const user = await prisma.user.findUnique({
-            where: { id: session.userId },
-            select: { isAnonymous: true, lastLoginMethod: true },
-          });
-
-          // Only track login events for non-anonymous users
-          // Anonymous users shouldn't trigger login events or create person profiles
-          if (user && !user.isAnonymous) {
-            const posthog = PostHogClient();
-
-            posthog?.capture({
-              distinctId: session.userId,
-              event: "login",
-              properties: { method: user.lastLoginMethod },
+            const user = await prisma.user.findUnique({
+              where: { id: session.userId },
+              select: { isAnonymous: true, lastLoginMethod: true },
             });
 
-            if (posthog) {
-              waitUntil(posthog.shutdown());
+            // Only track login events for non-anonymous users
+            // Anonymous users shouldn't trigger login events or create person profiles
+            if (user && !user.isAnonymous) {
+              try {
+                const posthog = PostHogClient();
+
+                posthog?.capture({
+                  distinctId: session.userId,
+                  event: "login",
+                  properties: { method: user.lastLoginMethod },
+                });
+
+                if (posthog) {
+                  waitUntil(posthog.shutdown());
+                }
+              } catch (posthogError) {
+                // Don't fail session creation if PostHog fails
+                console.error("Failed to track login event:", posthogError);
+              }
             }
+          } catch (error) {
+            // Log but don't fail session creation
+            console.error("Error in session.create.after hook (non-fatal):", error);
           }
         },
       },

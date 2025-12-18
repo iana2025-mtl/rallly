@@ -33,10 +33,39 @@ export const authClient = createAuthClient({
 });
 
 export async function signOut() {
+  // Get locale from current pathname
+  const currentPath = typeof window !== "undefined" ? window.location.pathname : "/";
+  const localeMatch = currentPath.match(/^\/([^/]+)/);
+  const locale = localeMatch && localeMatch[1] !== "login" && localeMatch[1] !== "register" && localeMatch[1] !== "api" 
+    ? localeMatch[1] 
+    : "en";
+  
+  // Clear all auth sessions
   await Promise.all([
     authClient.signOut(),
     nextAuthSignOut({ redirect: false }),
   ]);
-  // Redirect to login page after logout
-  window.location.href = "/login";
+  
+  // Clear any cached session data
+  if (typeof window !== "undefined") {
+    // Clear any localStorage/sessionStorage that might cache user data
+    try {
+      localStorage.removeItem("better-auth.session");
+      // Clear all better-auth related items
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith("better-auth") || key.startsWith("auth")) {
+          localStorage.removeItem(key);
+        }
+      });
+      sessionStorage.clear();
+    } catch (e) {
+      // Ignore errors if localStorage is not available
+      console.warn("Failed to clear storage:", e);
+    }
+  }
+  
+  // Redirect to login page with locale - use full page reload to clear all state
+  if (typeof window !== "undefined") {
+    window.location.href = `/${locale}/login`;
+  }
 }

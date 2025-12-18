@@ -14,6 +14,7 @@ import { useFormContext } from "react-hook-form";
 import dayjs from "dayjs";
 import { Trans } from "@/components/trans";
 import { useUser } from "@/components/user-provider";
+import { authClient } from "@/lib/auth-client";
 import { getBrowserTimeZone } from "@/utils/date-time-utils";
 import { Spinner } from "@/components/spinner";
 import { AISuggestionsErrorBoundary } from "../lib/error-boundary";
@@ -42,10 +43,88 @@ export function AISuggestionsPanel({
   const { user } = useUser();
   const track = useTrackSuggestions();
   const [isOpen, setIsOpen] = useState(false);
+  const [clientSession, setClientSession] = React.useState<{ user?: { email?: string; id?: string; isGuest?: boolean } } | null>(null);
 
-  // Check if user is available and authenticated (has email)
-  // Even if isGuest is true, if they have an email they're authenticated
-  const isUserReady = user && "email" in user && !!user.email;
+  // Check client-side session as a fallback (in case server-side user hasn't refreshed)
+  // Re-check when user state changes and periodically to catch login events
+  React.useEffect(() => {
+    let mounted = true;
+    let intervalId: NodeJS.Timeout | null = null;
+    
+    const checkSession = async () => {
+      try {
+        const session = await authClient.getSession();
+        if (mounted) {
+          const hasValidSession = session?.user?.email && !session.user.isGuest;
+          setClientSession(session);
+          
+          // If we found a valid session, stop polling (session is established)
+          if (hasValidSession && intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+          }
+        }
+      } catch {
+        // Ignore errors
+        if (mounted) {
+          setClientSession(null);
+        }
+      }
+    };
+    
+    // Check immediately
+    checkSession();
+    
+    // Poll periodically to catch session updates (stops automatically when session is found)
+    // This handles the case where login happens but server-side user hasn't refreshed yet
+    intervalId = setInterval(() => {
+      checkSession();
+    }, 1000); // Check every 1 second
+    
+    return () => {
+      mounted = false;
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [user]); // Re-run when user changes (e.g., after login page reload)
+
+  // Check if user is available and authenticated (not a guest)
+  // UserDTO has email and isGuest fields, GuestUser only has id and isGuest: true
+  // We need a user with an email who is not a guest
+  const isUserReady = React.useMemo(() => {
+    // First check server-side user from UserProvider
+    if (user) {
+      // Check if it's a GuestUser (only has id and isGuest: true)
+      if ("isGuest" in user && user.isGuest === true && !("email" in user)) {
+        console.log("[AI Panel] User is a guest (no email)");
+        // Fall through to check client session
+      } else if ("email" in user && user.email) {
+        // Check if it's a UserDTO with email
+        const isGuest = "isGuest" in user ? user.isGuest : false;
+        if (!isGuest) {
+          console.log("[AI Panel] User is ready (from UserProvider):", { email: user.email, isGuest });
+          return true;
+        }
+        console.log("[AI Panel] User has email but isGuest is true");
+      }
+    }
+    
+    // Fallback: check client-side session
+    if (clientSession?.user?.email && clientSession.user.id && !clientSession.user.isGuest) {
+      console.log("[AI Panel] User is ready (from client session):", { email: clientSession.user.email });
+      return true;
+    }
+    
+    console.log("[AI Panel] No authenticated user found", { 
+      hasUser: !!user, 
+      hasClientSession: !!clientSession?.user,
+      userEmail: user && "email" in user ? user.email : undefined,
+      clientEmail: clientSession?.user?.email,
+      clientIsGuest: clientSession?.user?.isGuest
+    });
+    return false;
+  }, [user, clientSession]);
 
   const watchDuration = form.watch("duration");
   const watchTimezone = form.watch("timeZone");
