@@ -53,8 +53,8 @@ const nextConfig = {
     return [
       {
         source: "/",
-        destination: "/en/login",
-        permanent: false, // Redirect to login page
+        destination: "/en",
+        permanent: false, // Redirect to locale - middleware will handle auth check
       },
       {
         source: "/support",

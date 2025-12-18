@@ -28,18 +28,10 @@ export const middleware = async (req: NextRequest) => {
     pathnameWithoutLocale = pathname;
   }
 
-  // For root path or locale-only path (like "/en"), redirect to login
-  // Note: next.config.js redirects "/" to "/en", so middleware sees "/en"
-  const isRootOrLocaleOnly = pathname === "/" || 
-    pathname === `/${locale}` || 
-    pathname === `/${locale}/` ||
-    (hasLocale && pathnameWithoutLocale === "/");
-  
-  if (isRootOrLocaleOnly && !isPublicRoute) {
-    const loginUrl = newUrl.clone();
-    loginUrl.pathname = `/${locale}/login`;
-    return NextResponse.redirect(loginUrl);
-  }
+  // Note: We don't check authentication in middleware (to avoid AWS SDK dependencies)
+  // Pages will handle auth checks and redirects:
+  // - Dashboard page redirects unauthenticated users to /login
+  // - Login page redirects authenticated users to dashboard
 
   // Continue with locale routing
   let finalPathname: string;

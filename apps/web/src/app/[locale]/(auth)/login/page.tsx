@@ -17,6 +17,8 @@ import { OrDivider } from "./components/or-divider";
 import { isFeatureEnabled } from "@/lib/feature-flags/server";
 import { env } from "@/env";
 import { getAuthProviders } from "@/lib/auth";
+import { getCurrentUser } from "@/auth/data";
+import { redirect } from "next/navigation";
 
 export default async function LoginPage(props: {
   params: Promise<{ locale: string }>;
@@ -26,6 +28,12 @@ export default async function LoginPage(props: {
   const isEmailLoginEnabled = isFeatureEnabled("emailLogin");
   const isDemoMode = env.DEMO_MODE === "true";
   const authProviders = getAuthProviders();
+
+  // Redirect authenticated users to dashboard
+  const user = await getCurrentUser();
+  if (user) {
+    redirect(`/${params.locale}`);
+  }
 
   if (!isEmailLoginEnabled) {
     return null;
